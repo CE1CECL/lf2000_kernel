@@ -1891,11 +1891,11 @@ static int pair_device(struct sock *sk, struct hci_dev *hdev, void *data,
 		auth_type = HCI_AT_DEDICATED_BONDING_MITM;
 
 	if (cp->addr.type == MGMT_ADDR_BREDR)
-		conn = hci_connect(hdev, ACL_LINK, &cp->addr.bdaddr, sec_level,
-				   auth_type);
+		conn = hci_connect(hdev, ACL_LINK, 0, &cp->addr.bdaddr,
+				   sec_level, auth_type);
 	else
-		conn = hci_connect(hdev, LE_LINK, &cp->addr.bdaddr, sec_level,
-				   auth_type);
+		conn = hci_connect(hdev, LE_LINK, 0, &cp->addr.bdaddr,
+				   sec_level, auth_type);
 
 	memset(&rp, 0, sizeof(rp));
 	bacpy(&rp.addr.bdaddr, &cp->addr.bdaddr);
@@ -2829,6 +2829,27 @@ int mgmt_powered(struct hci_dev *hdev, u8 powered)
 
 	if (match.sk)
 		sock_put(match.sk);
+
+	return err;
+}
+
+int mgmt_set_powered_failed(struct hci_dev *hdev, int err)
+{
+	struct pending_cmd *cmd;
+	u8 status;
+
+	cmd = mgmt_pending_find(MGMT_OP_SET_POWERED, hdev);
+	if (!cmd)
+		return -ENOENT;
+
+	if (err == -ERFKILL)
+		status = MGMT_STATUS_RFKILLED;
+	else
+		status = MGMT_STATUS_FAILED;
+
+	err = cmd_status(cmd->sk, hdev->id, MGMT_OP_SET_POWERED, status);
+
+	mgmt_pending_remove(cmd);
 
 	return err;
 }

@@ -1220,10 +1220,10 @@ int l2cap_chan_connect(struct l2cap_chan *chan, __le16 psm, u16 cid, bdaddr_t *d
 	auth_type = l2cap_get_auth_type(chan);
 
 	if (chan->dcid == L2CAP_CID_LE_DATA)
-		hcon = hci_connect(hdev, LE_LINK, dst,
+		hcon = hci_connect(hdev, LE_LINK, 0, dst,
 					chan->sec_level, auth_type);
 	else
-		hcon = hci_connect(hdev, ACL_LINK, dst,
+		hcon = hci_connect(hdev, ACL_LINK, 0, dst,
 					chan->sec_level, auth_type);
 
 	if (IS_ERR(hcon)) {
@@ -1879,6 +1879,9 @@ static struct sk_buff *l2cap_build_cmd(struct l2cap_conn *conn,
 
 	BT_DBG("conn %p, code 0x%2.2x, ident 0x%2.2x, len %d",
 			conn, code, ident, dlen);
+
+	if (conn->mtu < L2CAP_HDR_SIZE + L2CAP_CMD_HDR_SIZE)
+		return NULL;
 
 	len = L2CAP_HDR_SIZE + L2CAP_CMD_HDR_SIZE + dlen;
 	count = min_t(unsigned int, conn->mtu, len);

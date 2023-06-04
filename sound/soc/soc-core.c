@@ -1412,7 +1412,7 @@ static void snd_soc_instantiate_card(struct snd_soc_card *card)
 	struct snd_soc_dai_link *dai_link;
 	int ret, i, order;
 
-	mutex_lock(&card->mutex);
+	mutex_lock_nested(&card->mutex, SND_SOC_CARD_CLASS_INIT);
 
 	if (card->instantiated) {
 		mutex_unlock(&card->mutex);
@@ -1889,9 +1889,13 @@ unsigned int snd_soc_read(struct snd_soc_codec *codec, unsigned int reg)
 {
 	unsigned int ret;
 
-	ret = codec->read(codec, reg);
-	dev_dbg(codec->dev, "read %x => %x\n", reg, ret);
-	trace_snd_soc_reg_read(codec, reg, ret);
+        if (codec->read) {
+		ret = codec->read(codec, reg);
+		dev_dbg(codec->dev, "read %x => %x\n", reg, ret);
+		trace_snd_soc_reg_read(codec, reg, ret);
+        }
+        else
+		ret = -EIO;
 
 	return ret;
 }
@@ -1900,9 +1904,13 @@ EXPORT_SYMBOL_GPL(snd_soc_read);
 unsigned int snd_soc_write(struct snd_soc_codec *codec,
 			   unsigned int reg, unsigned int val)
 {
-	dev_dbg(codec->dev, "write %x = %x\n", reg, val);
-	trace_snd_soc_reg_write(codec, reg, val);
-	return codec->write(codec, reg, val);
+	if (codec->write) {
+		dev_dbg(codec->dev, "write %x = %x\n", reg, val);
+		trace_snd_soc_reg_write(codec, reg, val);
+		return codec->write(codec, reg, val);
+        }
+	else
+		return -EIO;
 }
 EXPORT_SYMBOL_GPL(snd_soc_write);
 
@@ -3123,6 +3131,7 @@ int snd_soc_register_card(struct snd_soc_card *card)
 	INIT_LIST_HEAD(&card->dapm_dirty);
 	card->instantiated = 0;
 	mutex_init(&card->mutex);
+	mutex_init(&card->dapm_mutex);
 
 	mutex_lock(&client_mutex);
 	list_add(&card->list, &card_list);
