@@ -567,10 +567,6 @@ struct task_struct *__sched _switch_to(struct task_struct *prev,
  */
 int do_work_pending(struct pt_regs *regs, u32 thread_info_flags)
 {
-	/* If we enter in kernel mode, do nothing and exit the caller loop. */
-	if (!user_mode(regs))
-		return 0;
-
 	if (thread_info_flags & _TIF_NEED_RESCHED) {
 		schedule();
 		return 1;
@@ -593,7 +589,8 @@ int do_work_pending(struct pt_regs *regs, u32 thread_info_flags)
 		return 1;
 	}
 	if (thread_info_flags & _TIF_SINGLESTEP) {
-		single_step_once(regs);
+		if ((regs->ex1 & SPR_EX_CONTEXT_1_1__PL_MASK) == 0)
+			single_step_once(regs);
 		return 0;
 	}
 	panic("work_pending: bad flags %#x\n", thread_info_flags);

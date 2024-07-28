@@ -5697,9 +5697,6 @@ int kvm_arch_vcpu_ioctl_set_sregs(struct kvm_vcpu *vcpu,
 	int pending_vec, max_bits, idx;
 	struct desc_ptr dt;
 
-	if (!guest_cpuid_has_xsave(vcpu) && (sregs->cr4 & X86_CR4_OSXSAVE))
-		return -EINVAL;
-
 	dt.size = sregs->idt.limit;
 	dt.address = sregs->idt.base;
 	kvm_x86_ops->set_idt(vcpu, &dt);
@@ -6584,7 +6581,6 @@ void kvm_arch_async_page_present(struct kvm_vcpu *vcpu,
 		kvm_inject_page_fault(vcpu, &fault);
 	}
 	vcpu->arch.apf.halted = false;
-	vcpu->arch.mp_state = KVM_MP_STATE_RUNNABLE;
 }
 
 bool kvm_arch_can_inject_async_page_present(struct kvm_vcpu *vcpu)

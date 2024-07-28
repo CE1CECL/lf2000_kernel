@@ -3053,6 +3053,7 @@ static int nand_flash_detect_onfi(struct mtd_info *mtd, struct nand_chip *chip,
 #ifdef CONFIG_PLAT_NXP3200
 	lf2000_onfi(mtd, chip);
 #endif
+
 	pr_info("ONFI flash detected\n");
 	return 1;
 }

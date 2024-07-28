@@ -1349,7 +1349,7 @@ static int efx_probe_interrupts(struct efx_nic *efx)
 	}
 
 	/* RSS might be usable on VFs even if it is disabled on the PF */
-	efx->rss_spread = ((efx->n_rx_channels > 1 || !efx_sriov_wanted(efx)) ?
+	efx->rss_spread = (efx->n_rx_channels > 1 ?
 			   efx->n_rx_channels : efx_vf_size(efx));
 
 	return 0;
@@ -1498,11 +1498,6 @@ static int efx_probe_all(struct efx_nic *efx)
 		goto fail2;
 	}
 
-	BUILD_BUG_ON(EFX_DEFAULT_DMAQ_SIZE < EFX_RXQ_MIN_ENT);
-	if (WARN_ON(EFX_DEFAULT_DMAQ_SIZE < EFX_TXQ_MIN_ENT(efx))) {
-		rc = -EINVAL;
-		goto fail3;
-	}
 	efx->rxq_entries = efx->txq_entries = EFX_DEFAULT_DMAQ_SIZE;
 
 	rc = efx_probe_filters(efx);
@@ -2070,7 +2065,6 @@ static int efx_register_netdev(struct efx_nic *efx)
 	net_dev->irq = efx->pci_dev->irq;
 	net_dev->netdev_ops = &efx_netdev_ops;
 	SET_ETHTOOL_OPS(net_dev, &efx_ethtool_ops);
-	net_dev->gso_max_segs = EFX_TSO_MAX_SEGS;
 
 	rtnl_lock();
 

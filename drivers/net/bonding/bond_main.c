@@ -76,7 +76,6 @@
 #include <net/route.h>
 #include <net/net_namespace.h>
 #include <net/netns/generic.h>
-#include <net/pkt_sched.h>
 #include "bonding.h"
 #include "bond_3ad.h"
 #include "bond_alb.h"
@@ -382,6 +381,8 @@ struct vlan_entry *bond_next_vlan(struct bonding *bond, struct vlan_entry *curr)
 	return next;
 }
 
+#define bond_queue_mapping(skb) (*(u16 *)((skb)->cb))
+
 /**
  * bond_dev_queue_xmit - Prepare skb for xmit.
  *
@@ -394,9 +395,7 @@ int bond_dev_queue_xmit(struct bonding *bond, struct sk_buff *skb,
 {
 	skb->dev = slave_dev;
 
-	BUILD_BUG_ON(sizeof(skb->queue_mapping) !=
-		     sizeof(qdisc_skb_cb(skb)->bond_queue_mapping));
-	skb->queue_mapping = qdisc_skb_cb(skb)->bond_queue_mapping;
+	skb->queue_mapping = bond_queue_mapping(skb);
 
 	if (unlikely(netpoll_tx_running(slave_dev)))
 		bond_netpoll_send_skb(bond_get_slave_by_dev(bond, slave_dev), skb);
@@ -1445,9 +1444,8 @@ static rx_handler_result_t bond_handle_frame(struct sk_buff **pskb)
 	struct sk_buff *skb = *pskb;
 	struct slave *slave;
 	struct bonding *bond;
-	int (*recv_probe)(struct sk_buff *, struct bonding *,
+	void (*recv_probe)(struct sk_buff *, struct bonding *,
 				struct slave *);
-	int ret = RX_HANDLER_ANOTHER;
 
 	skb = skb_share_check(skb, GFP_ATOMIC);
 	if (unlikely(!skb))
@@ -1466,12 +1464,8 @@ static rx_handler_result_t bond_handle_frame(struct sk_buff **pskb)
 		struct sk_buff *nskb = skb_clone(skb, GFP_ATOMIC);
 
 		if (likely(nskb)) {
-			ret = recv_probe(nskb, bond, slave);
+			recv_probe(nskb, bond, slave);
 			dev_kfree_skb(nskb);
-			if (ret == RX_HANDLER_CONSUMED) {
-				consume_skb(skb);
-				return ret;
-			}
 		}
 	}
 
@@ -1493,7 +1487,7 @@ static rx_handler_result_t bond_handle_frame(struct sk_buff **pskb)
 		memcpy(eth_hdr(skb)->h_dest, bond->dev->dev_addr, ETH_ALEN);
 	}
 
-	return ret;
+	return RX_HANDLER_ANOTHER;
 }
 
 /* enslave device <slave> to bond device <master> */
@@ -2729,7 +2723,7 @@ static void bond_validate_arp(struct bonding *bond, struct slave *slave, __be32 
 	}
 }
 
-static int bond_arp_rcv(struct sk_buff *skb, struct bonding *bond,
+static void bond_arp_rcv(struct sk_buff *skb, struct bonding *bond,
 			 struct slave *slave)
 {
 	struct arphdr *arp;
@@ -2737,7 +2731,7 @@ static int bond_arp_rcv(struct sk_buff *skb, struct bonding *bond,
 	__be32 sip, tip;
 
 	if (skb->protocol != __cpu_to_be16(ETH_P_ARP))
-		return RX_HANDLER_ANOTHER;
+		return;
 
 	read_lock(&bond->lock);
 
@@ -2782,7 +2776,6 @@ static int bond_arp_rcv(struct sk_buff *skb, struct bonding *bond,
 
 out_unlock:
 	read_unlock(&bond->lock);
-	return RX_HANDLER_ANOTHER;
 }
 
 /*
@@ -3218,12 +3211,6 @@ static int bond_master_netdev_event(unsigned long event,
 	switch (event) {
 	case NETDEV_CHANGENAME:
 		return bond_event_changename(event_bond);
-	case NETDEV_UNREGISTER:
-		bond_remove_proc_entry(event_bond);
-		break;
-	case NETDEV_REGISTER:
-		bond_create_proc_entry(event_bond);
-		break;
 	default:
 		break;
 	}
@@ -4169,7 +4156,7 @@ static u16 bond_select_queue(struct net_device *dev, struct sk_buff *skb)
 	/*
 	 * Save the original txq to restore before passing to the driver
 	 */
-	qdisc_skb_cb(skb)->bond_queue_mapping = skb->queue_mapping;
+	bond_queue_mapping(skb) = skb->queue_mapping;
 
 	if (unlikely(txq >= dev->real_num_tx_queues)) {
 		do {
@@ -4407,6 +4394,8 @@ static void bond_uninit(struct net_device *bond_dev)
 	list_del(&bond->bond_list);
 
 	bond_work_cancel_all(bond);
+
+	bond_remove_proc_entry(bond);
 
 	bond_debug_unregister(bond);
 
@@ -4809,6 +4798,7 @@ static int bond_init(struct net_device *bond_dev)
 
 	bond_set_lockdep_class(bond_dev);
 
+	bond_create_proc_entry(bond);
 	list_add_tail(&bond->bond_list, &bn->dev_list);
 
 	bond_prepare_sysfs_group(bond);

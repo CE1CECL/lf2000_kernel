@@ -489,8 +489,7 @@ static void __init build_mem_type_table(void)
 	 */
 	for (i = 0; i < ARRAY_SIZE(mem_types); i++) {
 		mem_types[i].prot_pte |= PTE_EXT_AF;
-		if (mem_types[i].prot_sect)
-			mem_types[i].prot_sect |= PMD_SECT_AF;
+		mem_types[i].prot_sect |= PMD_SECT_AF;
 	}
 	kern_pgprot |= PTE_EXT_AF;
 	vecs_pgprot |= PTE_EXT_AF;
@@ -563,11 +562,25 @@ static void __init *early_alloc(unsigned long sz)
 	return early_alloc_aligned(sz, sz);
 }
 
-static pte_t * __init early_pte_alloc(pmd_t *pmd, unsigned long addr, unsigned long prot)
+static pte_t * __init early_pte_alloc(pmd_t *pmd)
+{
+	if (pmd_none(*pmd) || pmd_bad(*pmd))
+		return early_alloc(PTE_HWTABLE_OFF + PTE_HWTABLE_SIZE);
+	return pmd_page_vaddr(*pmd);
+}
+
+static void __init early_pte_install(pmd_t *pmd, pte_t *pte, unsigned long prot)
+{
+	__pmd_populate(pmd, __pa(pte), prot);
+	BUG_ON(pmd_bad(*pmd));
+}
+
+static pte_t * __init early_pte_alloc_and_install(pmd_t *pmd,
+	unsigned long addr, unsigned long prot)
 {
 	if (pmd_none(*pmd)) {
-		pte_t *pte = early_alloc(PTE_HWTABLE_OFF + PTE_HWTABLE_SIZE);
-		__pmd_populate(pmd, __pa(pte), prot);
+		pte_t *pte = early_pte_alloc(pmd);
+		early_pte_install(pmd, pte, prot);
 	}
 	BUG_ON(pmd_bad(*pmd));
 	return pte_offset_kernel(pmd, addr);
@@ -577,16 +590,23 @@ static void __init alloc_init_pte(pmd_t *pmd, unsigned long addr,
 				  unsigned long end, unsigned long pfn,
 				  const struct mem_type *type)
 {
-	pte_t *pte = early_pte_alloc(pmd, addr, type->prot_l1);
+	pte_t *start_pte = early_pte_alloc(pmd);
+	pte_t *pte = start_pte + pte_index(addr);
+
+	/* If replacing a section mapping, the whole section must be replaced */
+	BUG_ON(pmd_bad(*pmd) && ((addr | end) & ~PMD_MASK));
+
 	do {
 		set_pte_ext(pte, pfn_pte(pfn, __pgprot(type->prot_pte)), 0);
 		pfn++;
 	} while (pte++, addr += PAGE_SIZE, addr != end);
+	early_pte_install(pmd, start_pte, type->prot_l1);
 }
 
 static void __init alloc_init_section(pud_t *pud, unsigned long addr,
 				      unsigned long end, phys_addr_t phys,
-				      const struct mem_type *type)
+				      const struct mem_type *type,
+				      bool force_pages)
 {
 	pmd_t *pmd = pmd_offset(pud, addr);
 
@@ -596,7 +616,7 @@ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
 	 * L1 entries, whereas PGDs refer to a group of L1 entries making
 	 * up one logical pointer to an L2 table.
 	 */
-	if (((addr | end | phys) & ~SECTION_MASK) == 0) {
+	if (((addr | end | phys) & ~SECTION_MASK) == 0 && !force_pages) {
 		pmd_t *p = pmd;
 
 #ifndef CONFIG_ARM_LPAE
@@ -620,14 +640,15 @@ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
 }
 
 static void __init alloc_init_pud(pgd_t *pgd, unsigned long addr,
-	unsigned long end, unsigned long phys, const struct mem_type *type)
+	unsigned long end, unsigned long phys, const struct mem_type *type,
+	bool force_pages)
 {
 	pud_t *pud = pud_offset(pgd, addr);
 	unsigned long next;
 
 	do {
 		next = pud_addr_end(addr, end);
-		alloc_init_section(pud, addr, next, phys, type);
+		alloc_init_section(pud, addr, next, phys, type, force_pages);
 		phys += next - addr;
 	} while (pud++, addr = next, addr != end);
 }
@@ -701,7 +722,7 @@ static void __init create_36bit_mapping(struct map_desc *md,
  * offsets, and we take full advantage of sections and
  * supersections.
  */
-static void __init create_mapping(struct map_desc *md)
+static void __init create_mapping(struct map_desc *md, bool force_pages)
 {
 	unsigned long addr, length, end;
 	phys_addr_t phys;
@@ -751,7 +772,7 @@ static void __init create_mapping(struct map_desc *md)
 	do {
 		unsigned long next = pgd_addr_end(addr, end);
 
-		alloc_init_pud(pgd, addr, next, phys, type);
+		alloc_init_pud(pgd, addr, next, phys, type, force_pages);
 
 		phys += next - addr;
 		addr = next;
@@ -772,7 +793,7 @@ void __init iotable_init(struct map_desc *io_desc, int nr)
 	vm = early_alloc_aligned(sizeof(*vm) * nr, __alignof__(*vm));
 
 	for (md = io_desc; nr; md++, nr--) {
-		create_mapping(md);
+		create_mapping(md, false);
 		vm->addr = (void *)(md->virtual & PAGE_MASK);
 		vm->size = PAGE_ALIGN(md->length + (md->virtual & ~PAGE_MASK));
 		vm->phys_addr = __pfn_to_phys(md->pfn); 
@@ -782,79 +803,6 @@ void __init iotable_init(struct map_desc *io_desc, int nr)
 		vm_area_add_early(vm++);
 	}
 }
-
-#ifndef CONFIG_ARM_LPAE
-
-/*
- * The Linux PMD is made of two consecutive section entries covering 2MB
- * (see definition in include/asm/pgtable-2level.h).  However a call to
- * create_mapping() may optimize static mappings by using individual
- * 1MB section mappings.  This leaves the actual PMD potentially half
- * initialized if the top or bottom section entry isn't used, leaving it
- * open to problems if a subsequent ioremap() or vmalloc() tries to use
- * the virtual space left free by that unused section entry.
- *
- * Let's avoid the issue by inserting dummy vm entries covering the unused
- * PMD halves once the static mappings are in place.
- */
-
-static void __init pmd_empty_section_gap(unsigned long addr)
-{
-	struct vm_struct *vm;
-
-	vm = early_alloc_aligned(sizeof(*vm), __alignof__(*vm));
-	vm->addr = (void *)addr;
-	vm->size = SECTION_SIZE;
-	vm->flags = VM_IOREMAP | VM_ARM_EMPTY_MAPPING;
-	vm->caller = pmd_empty_section_gap;
-	vm_area_add_early(vm);
-}
-
-static void __init fill_pmd_gaps(void)
-{
-	struct vm_struct *vm;
-	unsigned long addr, next = 0;
-	pmd_t *pmd;
-
-	/* we're still single threaded hence no lock needed here */
-	for (vm = vmlist; vm; vm = vm->next) {
-		if (!(vm->flags & (VM_ARM_STATIC_MAPPING | VM_ARM_EMPTY_MAPPING)))
-			continue;
-		addr = (unsigned long)vm->addr;
-		if (addr < next)
-			continue;
-
-		/*
-		 * Check if this vm starts on an odd section boundary.
-		 * If so and the first section entry for this PMD is free
-		 * then we block the corresponding virtual address.
-		 */
-		if ((addr & ~PMD_MASK) == SECTION_SIZE) {
-			pmd = pmd_off_k(addr);
-			if (pmd_none(*pmd))
-				pmd_empty_section_gap(addr & PMD_MASK);
-		}
-
-		/*
-		 * Then check if this vm ends on an odd section boundary.
-		 * If so and the second section entry for this PMD is empty
-		 * then we block the corresponding virtual address.
-		 */
-		addr += vm->size;
-		if ((addr & ~PMD_MASK) == SECTION_SIZE) {
-			pmd = pmd_off_k(addr) + 1;
-			if (pmd_none(*pmd))
-				pmd_empty_section_gap(addr);
-		}
-
-		/* no need to look at any vm entry until we hit the next PMD */
-		next = (addr + PMD_SIZE - 1) & PMD_MASK;
-	}
-}
-
-#else
-#define fill_pmd_gaps() do { } while (0)
-#endif
 
 static void * __initdata vmalloc_min =
 	(void *)(VMALLOC_END - (240 << 20) - VMALLOC_OFFSET);
@@ -1124,12 +1072,12 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 	map.virtual = 0xffff0000;
 	map.length = PAGE_SIZE;
 	map.type = MT_HIGH_VECTORS;
-	create_mapping(&map);
+	create_mapping(&map, false);
 
 	if (!vectors_high()) {
 		map.virtual = 0;
 		map.type = MT_LOW_VECTORS;
-		create_mapping(&map);
+		create_mapping(&map, false);
 	}
 
 	/*
@@ -1137,7 +1085,6 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 	 */
 	if (mdesc->map_io)
 		mdesc->map_io();
-	fill_pmd_gaps();
 
 	/*
 	 * Finally flush the caches and tlb to ensure that we're in a
@@ -1152,20 +1099,23 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 static void __init kmap_init(void)
 {
 #ifdef CONFIG_HIGHMEM
-	pkmap_page_table = early_pte_alloc(pmd_off_k(PKMAP_BASE),
+	pkmap_page_table = early_pte_alloc_and_install(pmd_off_k(PKMAP_BASE),
 		PKMAP_BASE, _PAGE_KERNEL_TABLE);
 #endif
 }
 
+
 static void __init map_lowmem(void)
 {
 	struct memblock_region *reg;
+	phys_addr_t start;
+	phys_addr_t end;
+	struct map_desc map;
 
 	/* Map all the lowmem memory banks. */
 	for_each_memblock(memory, reg) {
-		phys_addr_t start = reg->base;
-		phys_addr_t end = start + reg->size;
-		struct map_desc map;
+		start = reg->base;
+		end = start + reg->size;
 
 		if (end > lowmem_limit)
 			end = lowmem_limit;
@@ -1177,8 +1127,20 @@ static void __init map_lowmem(void)
 		map.length = end - start;
 		map.type = MT_MEMORY;
 
-		create_mapping(&map);
+		create_mapping(&map, false);
 	}
+
+#ifdef CONFIG_DEBUG_RODATA
+	start = __pa(_stext) & PMD_MASK;
+	end = ALIGN(__pa(__end_rodata), PMD_SIZE);
+
+	map.pfn = __phys_to_pfn(start);
+	map.virtual = __phys_to_virt(start);
+	map.length = end - start;
+	map.type = MT_MEMORY;
+
+	create_mapping(&map, true);
+#endif
 }
 
 /*

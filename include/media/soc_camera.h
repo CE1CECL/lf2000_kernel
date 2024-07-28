@@ -59,8 +59,7 @@ struct soc_camera_device {
 struct soc_camera_host {
 	struct v4l2_device v4l2_dev;
 	struct list_head list;
-	struct mutex host_lock;		/* Protect during probing */
-	unsigned char nr;		/* Host number */
+	unsigned char nr;				/* Host number */
 	void *priv;
 	const char *drv_name;
 	struct soc_camera_host_ops *ops;

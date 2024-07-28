@@ -20,10 +20,10 @@
 #include <linux/io.h>
 #include <linux/list.h>
 #include <linux/memblock.h>
+#include <linux/persistent_ram.h>
 #include <linux/rslib.h>
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
-#include "persistent_ram.h"
 
 struct persistent_ram_buffer {
 	uint32_t    sig;
@@ -34,7 +34,7 @@ struct persistent_ram_buffer {
 
 #define PERSISTENT_RAM_SIG (0x43474244) /* DBGC */
 
-static __initdata LIST_HEAD(persistent_ram_list);
+static __devinitdata LIST_HEAD(persistent_ram_list);
 
 static inline size_t buffer_size(struct persistent_ram_zone *prz)
 {
@@ -77,6 +77,23 @@ static inline void buffer_size_add(struct persistent_ram_zone *prz, size_t a)
 		if (new > prz->buffer_size)
 			new = prz->buffer_size;
 	} while (atomic_cmpxchg(&prz->buffer->size, old, new) != old);
+}
+
+/* increase the size counter, retuning an error if it hits the max size */
+static inline ssize_t buffer_size_add_clamp(struct persistent_ram_zone *prz,
+	size_t a)
+{
+	size_t old;
+	size_t new;
+
+	do {
+		old = atomic_read(&prz->buffer->size);
+		new = old + a;
+		if (new > prz->buffer_size)
+			return -ENOMEM;
+	} while (atomic_cmpxchg(&prz->buffer->size, old, new) != old);
+
+	return 0;
 }
 
 static void notrace persistent_ram_encode_rs8(struct persistent_ram_zone *prz,
@@ -249,7 +266,7 @@ static void notrace persistent_ram_update(struct persistent_ram_zone *prz,
 	persistent_ram_update_ecc(prz, start, count);
 }
 
-static void __init
+static void __devinit
 persistent_ram_save_old(struct persistent_ram_zone *prz)
 {
 	struct persistent_ram_buffer *buffer = prz->buffer;
@@ -283,7 +300,7 @@ int notrace persistent_ram_write(struct persistent_ram_zone *prz,
 		c = prz->buffer_size;
 	}
 
-	buffer_size_add(prz, c);
+	buffer_size_add_clamp(prz, c);
 
 	start = buffer_start_add(prz, c);
 
@@ -356,7 +373,7 @@ static int persistent_ram_buffer_map(phys_addr_t start, phys_addr_t size,
 	return 0;
 }
 
-static int __init persistent_ram_buffer_init(const char *name,
+static int __devinit persistent_ram_buffer_init(const char *name,
 		struct persistent_ram_zone *prz)
 {
 	int i;
@@ -378,7 +395,7 @@ static int __init persistent_ram_buffer_init(const char *name,
 	return -EINVAL;
 }
 
-static  __init
+static  __devinit
 struct persistent_ram_zone *__persistent_ram_init(struct device *dev, bool ecc)
 {
 	struct persistent_ram_zone *prz;
@@ -407,11 +424,11 @@ struct persistent_ram_zone *__persistent_ram_init(struct device *dev, bool ecc)
 		if (buffer_size(prz) > prz->buffer_size ||
 		    buffer_start(prz) > buffer_size(prz))
 			pr_info("persistent_ram: found existing invalid buffer,"
-				" size %ld, start %ld\n",
+				" size %zu, start %zu\n",
 			       buffer_size(prz), buffer_start(prz));
 		else {
 			pr_info("persistent_ram: found existing buffer,"
-				" size %ld, start %ld\n",
+				" size %zu, start %zu\n",
 			       buffer_size(prz), buffer_start(prz));
 			persistent_ram_save_old(prz);
 		}
@@ -430,7 +447,7 @@ err:
 	return ERR_PTR(ret);
 }
 
-struct persistent_ram_zone * __init
+struct persistent_ram_zone * __devinit
 persistent_ram_init_ringbuffer(struct device *dev, bool ecc)
 {
 	return __persistent_ram_init(dev, ecc);

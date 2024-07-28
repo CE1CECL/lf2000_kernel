@@ -1891,11 +1891,11 @@ static int pair_device(struct sock *sk, struct hci_dev *hdev, void *data,
 		auth_type = HCI_AT_DEDICATED_BONDING_MITM;
 
 	if (cp->addr.type == MGMT_ADDR_BREDR)
-		conn = hci_connect(hdev, ACL_LINK, &cp->addr.bdaddr, sec_level,
-				   auth_type);
+		conn = hci_connect(hdev, ACL_LINK, 0, &cp->addr.bdaddr,
+				   sec_level, auth_type);
 	else
-		conn = hci_connect(hdev, LE_LINK, &cp->addr.bdaddr, sec_level,
-				   auth_type);
+		conn = hci_connect(hdev, LE_LINK, 0, &cp->addr.bdaddr,
+				   sec_level, auth_type);
 
 	memset(&rp, 0, sizeof(rp));
 	bacpy(&rp.addr.bdaddr, &cp->addr.bdaddr);
@@ -2800,22 +2800,6 @@ int mgmt_powered(struct hci_dev *hdev, u8 powered)
 
 		if (scan)
 			hci_send_cmd(hdev, HCI_OP_WRITE_SCAN_ENABLE, 1, &scan);
-
-		if (test_bit(HCI_SSP_ENABLED, &hdev->dev_flags)) {
-			u8 ssp = 1;
-
-			hci_send_cmd(hdev, HCI_OP_WRITE_SSP_MODE, 1, &ssp);
-		}
-
-		if (test_bit(HCI_LE_ENABLED, &hdev->dev_flags)) {
-			struct hci_cp_write_le_host_supported cp;
-
-			cp.le = 1;
-			cp.simul = !!(hdev->features[6] & LMP_SIMUL_LE_BR);
-
-			hci_send_cmd(hdev, HCI_OP_WRITE_LE_HOST_SUPPORTED,
-				     sizeof(cp), &cp);
-		}
 
 		update_class(hdev);
 		update_name(hdev, hdev->dev_name);

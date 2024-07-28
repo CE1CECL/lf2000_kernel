@@ -2173,10 +2173,9 @@ re_arm:
  * received frames (loopback). Since only the payload is given to this
  * function, it check for loopback.
  */
-static int bond_3ad_rx_indication(struct lacpdu *lacpdu, struct slave *slave, u16 length)
+static void bond_3ad_rx_indication(struct lacpdu *lacpdu, struct slave *slave, u16 length)
 {
 	struct port *port;
-	int ret = RX_HANDLER_ANOTHER;
 
 	if (length >= sizeof(struct lacpdu)) {
 
@@ -2185,12 +2184,11 @@ static int bond_3ad_rx_indication(struct lacpdu *lacpdu, struct slave *slave, u1
 		if (!port->slave) {
 			pr_warning("%s: Warning: port of slave %s is uninitialized\n",
 				   slave->dev->name, slave->dev->master->name);
-			return ret;
+			return;
 		}
 
 		switch (lacpdu->subtype) {
 		case AD_TYPE_LACPDU:
-			ret = RX_HANDLER_CONSUMED;
 			pr_debug("Received LACPDU on port %d\n",
 				 port->actor_port_number);
 			/* Protect against concurrent state machines */
@@ -2200,7 +2198,6 @@ static int bond_3ad_rx_indication(struct lacpdu *lacpdu, struct slave *slave, u1
 			break;
 
 		case AD_TYPE_MARKER:
-			ret = RX_HANDLER_CONSUMED;
 			// No need to convert fields to Little Endian since we don't use the marker's fields.
 
 			switch (((struct bond_marker *)lacpdu)->tlv_type) {
@@ -2222,7 +2219,6 @@ static int bond_3ad_rx_indication(struct lacpdu *lacpdu, struct slave *slave, u1
 			}
 		}
 	}
-	return ret;
 }
 
 /**
@@ -2460,20 +2456,18 @@ out:
 	return NETDEV_TX_OK;
 }
 
-int bond_3ad_lacpdu_recv(struct sk_buff *skb, struct bonding *bond,
+void bond_3ad_lacpdu_recv(struct sk_buff *skb, struct bonding *bond,
 			  struct slave *slave)
 {
-	int ret = RX_HANDLER_ANOTHER;
 	if (skb->protocol != PKT_TYPE_LACPDU)
-		return ret;
+		return;
 
 	if (!pskb_may_pull(skb, sizeof(struct lacpdu)))
-		return ret;
+		return;
 
 	read_lock(&bond->lock);
-	ret = bond_3ad_rx_indication((struct lacpdu *) skb->data, slave, skb->len);
+	bond_3ad_rx_indication((struct lacpdu *) skb->data, slave, skb->len);
 	read_unlock(&bond->lock);
-	return ret;
 }
 
 /*

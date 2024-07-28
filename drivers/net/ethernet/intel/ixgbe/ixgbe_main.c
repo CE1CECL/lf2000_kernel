@@ -114,7 +114,6 @@ static DEFINE_PCI_DEVICE_TABLE(ixgbe_pci_tbl) = {
 	{PCI_VDEVICE(INTEL, IXGBE_DEV_ID_82599_LS), board_82599 },
 	{PCI_VDEVICE(INTEL, IXGBE_DEV_ID_82599EN_SFP), board_82599 },
 	{PCI_VDEVICE(INTEL, IXGBE_DEV_ID_82599_SFP_SF_QP), board_82599 },
-	{PCI_VDEVICE(INTEL, IXGBE_DEV_ID_X540T1), board_X540 },
 	/* required last entry */
 	{0, }
 };
@@ -1037,17 +1036,17 @@ static inline void ixgbe_rx_hash(struct ixgbe_ring *ring,
 #ifdef IXGBE_FCOE
 /**
  * ixgbe_rx_is_fcoe - check the rx desc for incoming pkt type
- * @ring: structure containing ring specific data
+ * @adapter: address of board private structure
  * @rx_desc: advanced rx descriptor
  *
  * Returns : true if it is FCoE pkt
  */
-static inline bool ixgbe_rx_is_fcoe(struct ixgbe_ring *ring,
+static inline bool ixgbe_rx_is_fcoe(struct ixgbe_adapter *adapter,
 				    union ixgbe_adv_rx_desc *rx_desc)
 {
 	__le16 pkt_info = rx_desc->wb.lower.lo_dword.hs_rss.pkt_info;
 
-	return test_bit(__IXGBE_RX_FCOE, &ring->state) &&
+	return (adapter->flags & IXGBE_FLAG_FCOE_ENABLED) &&
 	       ((pkt_info & cpu_to_le16(IXGBE_RXDADV_PKTTYPE_ETQF_MASK)) ==
 		(cpu_to_le16(IXGBE_ETQF_FILTER_FCOE <<
 			     IXGBE_RXDADV_PKTTYPE_ETQF_SHIFT)));
@@ -1520,12 +1519,6 @@ static bool ixgbe_cleanup_headers(struct ixgbe_ring *rx_ring,
 		skb->truesize -= ixgbe_rx_bufsz(rx_ring);
 	}
 
-#ifdef IXGBE_FCOE
-	/* do not attempt to pad FCoE Frames as this will disrupt DDP */
-	if (ixgbe_rx_is_fcoe(rx_ring, rx_desc))
-		return false;
-
-#endif
 	/* if skb_pad returns an error the skb was freed */
 	if (unlikely(skb->len < 60)) {
 		int pad_len = 60 - skb->len;
@@ -1752,7 +1745,7 @@ static bool ixgbe_clean_rx_irq(struct ixgbe_q_vector *q_vector,
 
 #ifdef IXGBE_FCOE
 		/* if ddp, not passing to ULD unless for FCP_RSP or error */
-		if (ixgbe_rx_is_fcoe(rx_ring, rx_desc)) {
+		if (ixgbe_rx_is_fcoe(adapter, rx_desc)) {
 			ddp_bytes = ixgbe_fcoe_ddp(adapter, rx_desc, skb);
 			if (!ddp_bytes) {
 				dev_kfree_skb_any(skb);
@@ -2677,6 +2670,8 @@ void ixgbe_configure_tx_ring(struct ixgbe_adapter *adapter,
 
 	/* enable queue */
 	IXGBE_WRITE_REG(hw, IXGBE_TXDCTL(reg_idx), txdctl);
+
+	netdev_tx_reset_queue(txring_txq(ring));
 
 	/* TXDCTL.EN will return 0 on 82598 if link is down, so skip it */
 	if (hw->mac.type == ixgbe_mac_82598EB &&
@@ -4172,8 +4167,6 @@ static void ixgbe_clean_tx_ring(struct ixgbe_ring *tx_ring)
 		ixgbe_unmap_and_free_tx_resource(tx_ring, tx_buffer_info);
 	}
 
-	netdev_tx_reset_queue(txring_txq(tx_ring));
-
 	size = sizeof(struct ixgbe_tx_buffer) * tx_ring->count;
 	memset(tx_ring->tx_buffer_info, 0, size);
 
@@ -4425,8 +4418,8 @@ static int __devinit ixgbe_sw_init(struct ixgbe_adapter *adapter)
 	adapter->dcb_cfg.pfc_mode_enable = false;
 	adapter->dcb_set_bitmap = 0x00;
 	adapter->dcbx_cap = DCB_CAP_DCBX_HOST | DCB_CAP_DCBX_VER_CEE;
-	memcpy(&adapter->temp_dcb_cfg, &adapter->dcb_cfg,
-	       sizeof(adapter->temp_dcb_cfg));
+	ixgbe_copy_dcb_cfg(&adapter->dcb_cfg, &adapter->temp_dcb_cfg,
+			   MAX_TRAFFIC_CLASS);
 
 #endif
 
@@ -4873,12 +4866,10 @@ static int __ixgbe_shutdown(struct pci_dev *pdev, bool *enable_wake)
 	netif_device_detach(netdev);
 
 	if (netif_running(netdev)) {
-		rtnl_lock();
 		ixgbe_down(adapter);
 		ixgbe_free_irq(adapter);
 		ixgbe_free_all_tx_resources(adapter);
 		ixgbe_free_all_rx_resources(adapter);
-		rtnl_unlock();
 	}
 
 	ixgbe_clear_interrupt_scheme(adapter);
@@ -7061,7 +7052,6 @@ static int __devinit ixgbe_probe(struct pci_dev *pdev,
 		adapter->wol = IXGBE_WUFC_MAG;
 		break;
 	case IXGBE_DEV_ID_X540T:
-	case IXGBE_DEV_ID_X540T1:
 		/* Check eeprom to see if it is enabled */
 		hw->eeprom.ops.read(hw, 0x2c, &adapter->eeprom_cap);
 		wol_cap = adapter->eeprom_cap & IXGBE_DEVICE_CAPS_WOL_MASK;

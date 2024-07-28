@@ -247,9 +247,7 @@ good_area:
 	return handle_mm_fault(mm, vma, addr & PAGE_MASK, flags);
 
 check_stack:
-	/* Don't allow expansion below FIRST_USER_ADDRESS */
-	if (vma->vm_flags & VM_GROWSDOWN &&
-	    addr >= FIRST_USER_ADDRESS && !expand_stack(vma, addr))
+	if (vma->vm_flags & VM_GROWSDOWN && !expand_stack(vma, addr))
 		goto good_area;
 out:
 	return fault;

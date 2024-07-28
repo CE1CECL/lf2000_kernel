@@ -11,7 +11,6 @@ config TILE
 	select GENERIC_IRQ_PROBE
 	select GENERIC_PENDING_IRQ if SMP
 	select GENERIC_IRQ_SHOW
-	select HAVE_SYSCALL_WRAPPERS if TILEGX
 	select SYS_HYPERVISOR
 	select ARCH_HAVE_NMI_SAFE_CMPXCHG
 
@@ -101,7 +100,7 @@ config SMP
 # Allow checking for compile-time determined overflow errors in
 # copy_from_user().  There are still unprovable places in the
 # generic code as of 2.6.34, so this option is not really compatible
-# with -Werror, which is more useful in general.
+# with , which is more useful in general.
 config DEBUG_COPY_FROM_USER
 	def_bool n
 

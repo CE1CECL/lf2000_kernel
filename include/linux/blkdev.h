@@ -1,10 +1,9 @@
 #ifndef _LINUX_BLKDEV_H
 #define _LINUX_BLKDEV_H
 
-#include <linux/sched.h>
-
 #ifdef CONFIG_BLOCK
 
+#include <linux/sched.h>
 #include <linux/major.h>
 #include <linux/genhd.h>
 #include <linux/list.h>

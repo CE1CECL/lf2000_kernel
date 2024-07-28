@@ -1053,10 +1053,13 @@ static int kbd_update_leds_helper(struct input_handle *handle, void *data)
  */
 int vt_get_leds(int console, int flag)
 {
+	unsigned long flags;
 	struct kbd_struct * kbd = kbd_table + console;
 	int ret;
 
+	spin_lock_irqsave(&kbd_event_lock, flags);
 	ret = vc_kbd_led(kbd, flag);
+	spin_unlock_irqrestore(&kbd_event_lock, flags);
 
 	return ret;
 }
@@ -2041,7 +2044,7 @@ int vt_do_kdskled(int console, int cmd, unsigned long arg, int perm)
 		kbd->default_ledflagstate = ((arg >> 4) & 7);
 		set_leds();
                 spin_unlock_irqrestore(&kbd_event_lock, flags);
-		return 0;
+		break;
 
 	/* the ioctls below only set the lights, not the functions */
 	/* for those, see KDGKBLED and KDSKBLED above */

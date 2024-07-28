@@ -893,7 +893,6 @@ static void l2cap_le_conn_ready(struct l2cap_conn *conn)
 	sk = chan->sk;
 
 	hci_conn_hold(conn->hcon);
-	conn->hcon->disc_timeout = HCI_DISCONN_TIMEOUT;
 
 	bacpy(&bt_sk(sk)->src, conn->src);
 	bacpy(&bt_sk(sk)->dst, conn->dst);
@@ -937,15 +936,14 @@ static void l2cap_chan_ready(struct l2cap_chan *chan)
 static void l2cap_conn_ready(struct l2cap_conn *conn)
 {
 	struct l2cap_chan *chan;
-	struct hci_conn *hcon = conn->hcon;
 
 	BT_DBG("conn %p", conn);
 
-	if (!hcon->out && hcon->type == LE_LINK)
+	if (!conn->hcon->out && conn->hcon->type == LE_LINK)
 		l2cap_le_conn_ready(conn);
 
-	if (hcon->out && hcon->type == LE_LINK)
-		smp_conn_security(hcon, hcon->pending_sec_level);
+	if (conn->hcon->out && conn->hcon->type == LE_LINK)
+		smp_conn_security(conn, conn->hcon->pending_sec_level);
 
 	mutex_lock(&conn->chan_lock);
 
@@ -953,8 +951,8 @@ static void l2cap_conn_ready(struct l2cap_conn *conn)
 
 		l2cap_chan_lock(chan);
 
-		if (hcon->type == LE_LINK) {
-			if (smp_conn_security(hcon, chan->sec_level))
+		if (conn->hcon->type == LE_LINK) {
+			if (smp_conn_security(conn, chan->sec_level))
 				l2cap_chan_ready(chan);
 
 		} else if (chan->chan_type != L2CAP_CHAN_CONN_ORIENTED) {
@@ -1220,10 +1218,10 @@ int l2cap_chan_connect(struct l2cap_chan *chan, __le16 psm, u16 cid, bdaddr_t *d
 	auth_type = l2cap_get_auth_type(chan);
 
 	if (chan->dcid == L2CAP_CID_LE_DATA)
-		hcon = hci_connect(hdev, LE_LINK, dst,
+		hcon = hci_connect(hdev, LE_LINK, 0, dst,
 					chan->sec_level, auth_type);
 	else
-		hcon = hci_connect(hdev, ACL_LINK, dst,
+		hcon = hci_connect(hdev, ACL_LINK, 0, dst,
 					chan->sec_level, auth_type);
 
 	if (IS_ERR(hcon)) {
@@ -2585,14 +2583,12 @@ static void l2cap_conf_rfc_get(struct l2cap_chan *chan, void *rsp, int len)
 	while (len >= L2CAP_CONF_OPT_SIZE) {
 		len -= l2cap_get_conf_opt(&rsp, &type, &olen, &val);
 
-		if (type != L2CAP_CONF_RFC)
-			continue;
-
-		if (olen != sizeof(rfc))
-			break;
-
-		memcpy(&rfc, (void *)val, olen);
-		goto done;
+		switch (type) {
+		case L2CAP_CONF_RFC:
+			if (olen == sizeof(rfc))
+				memcpy(&rfc, (void *)val, olen);
+			goto done;
+		}
 	}
 
 	/* Use sane default values in case a misbehaving remote device
@@ -4593,11 +4589,6 @@ int l2cap_security_cfm(struct hci_conn *hcon, u8 status, u8 encrypt)
 
 		if (!status && (chan->state == BT_CONNECTED ||
 						chan->state == BT_CONFIG)) {
-			struct sock *sk = chan->sk;
-
-			bt_sk(sk)->suspended = false;
-			sk->sk_state_change(sk);
-
 			l2cap_check_encryption(chan, encrypt);
 			l2cap_chan_unlock(chan);
 			continue;

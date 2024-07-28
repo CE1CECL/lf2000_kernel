@@ -11,7 +11,6 @@
 #include <linux/types.h>
 #include <linux/cpu.h>
 #include <linux/cpu_pm.h>
-#include <linux/hardirq.h>
 #include <linux/kernel.h>
 #include <linux/notifier.h>
 #include <linux/signal.h>
@@ -433,10 +432,7 @@ void VFP_bounce(u32 trigger, u32 fpexc, struct pt_regs *regs)
 
 static void vfp_enable(void *unused)
 {
-	u32 access;
-
-	BUG_ON(preemptible());
-	access = get_copro_access();
+	u32 access = get_copro_access();
 
 	/*
 	 * Enable full access to VFP (cp10 and cp11)
@@ -583,6 +579,12 @@ int vfp_preserve_user_clear_hwstate(struct user_vfp __user *ufp,
 	 * entry.
 	 */
 	hwstate->fpscr &= ~(FPSCR_LENGTH_MASK | FPSCR_STRIDE_MASK);
+
+	/*
+	 * Disable VFP in the hwstate so that we can detect if it gets
+	 * used.
+	 */
+	hwstate->fpexc &= ~FPEXC_EN;
 	return 0;
 }
 
@@ -595,8 +597,12 @@ int vfp_restore_user_hwstate(struct user_vfp __user *ufp,
 	unsigned long fpexc;
 	int err = 0;
 
-	/* Disable VFP to avoid corrupting the new thread state. */
-	vfp_flush_hwstate(thread);
+	/*
+	 * If VFP has been used, then disable it to avoid corrupting
+	 * the new thread state.
+	 */
+	if (hwstate->fpexc & FPEXC_EN)
+		vfp_flush_hwstate(thread);
 
 	/*
 	 * Copy the floating point registers. There can be unused
@@ -657,7 +663,7 @@ static int __init vfp_init(void)
 	unsigned int cpu_arch = cpu_architecture();
 
 	if (cpu_arch >= CPU_ARCH_ARMv6)
-		on_each_cpu(vfp_enable, NULL, 1);
+		vfp_enable(NULL);
 
 	/*
 	 * First check that there is a VFP that we can use.
@@ -677,6 +683,8 @@ static int __init vfp_init(void)
 		printk("no double precision support\n");
 	} else {
 		hotcpu_notifier(vfp_hotplug, 0);
+
+		smp_call_function(vfp_enable, NULL, 1);
 
 		VFP_arch = (vfpsid & FPSID_ARCH_MASK) >> FPSID_ARCH_BIT;  /* Extract the architecture version */
 		printk("implementor %02x architecture %d part %02x variant %x rev %x\n",
@@ -701,14 +709,11 @@ static int __init vfp_init(void)
 			elf_hwcap |= HWCAP_VFPv3;
 
 			/*
-			 * Check for VFPv3 D16 and VFPv4 D16.  CPUs in
-			 * this configuration only have 16 x 64bit
-			 * registers.
+			 * Check for VFPv3 D16. CPUs in this configuration
+			 * only have 16 x 64bit registers.
 			 */
 			if (((fmrx(MVFR0) & MVFR0_A_SIMD_MASK)) == 1)
-				elf_hwcap |= HWCAP_VFPv3D16; /* also v4-D16 */
-			else
-				elf_hwcap |= HWCAP_VFPD32;
+				elf_hwcap |= HWCAP_VFPv3D16;
 		}
 #endif
 		/*
@@ -722,10 +727,8 @@ static int __init vfp_init(void)
 			if ((fmrx(MVFR1) & 0x000fff00) == 0x00011100)
 				elf_hwcap |= HWCAP_NEON;
 #endif
-#ifdef CONFIG_VFPv3
 			if ((fmrx(MVFR1) & 0xf0000000) == 0x10000000)
 				elf_hwcap |= HWCAP_VFPv4;
-#endif
 		}
 	}
 	return 0;

@@ -2510,10 +2510,8 @@ static struct scatterlist *mtip_hw_get_scatterlist(struct driver_data *dd,
 		up(&dd->port->cmd_slot);
 		return NULL;
 	}
-	if (unlikely(*tag < 0)) {
-		up(&dd->port->cmd_slot);
+	if (unlikely(*tag < 0))
 		return NULL;
-	}
 
 	return dd->port->commands[*tag].sg;
 }

@@ -2637,7 +2637,6 @@ static int brcmf_sdbrcm_dpc_thread(void *data)
 				/* after stopping the bus, exit thread */
 				brcmf_sdbrcm_bus_stop(bus->sdiodev->dev);
 				bus->dpc_tsk = NULL;
-				spin_lock_irqsave(&bus->dpc_tl_lock, flags);
 				break;
 			}
 

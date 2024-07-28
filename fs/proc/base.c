@@ -137,6 +137,12 @@ struct pid_entry {
 
 static int proc_fd_permission(struct inode *inode, int mask);
 
+/* ANDROID is for special files in /proc. */
+#define ANDROID(NAME, MODE, OTYPE)			\
+	NOD(NAME, (S_IFREG|(MODE)),			\
+		&proc_##OTYPE##_inode_operations,	\
+		&proc_##OTYPE##_operations, {})
+
 /*
  * Count the number of hardlinks for the pid_entry table, excluding the .
  * and .. links.
@@ -969,6 +975,35 @@ out:
 	return err < 0 ? err : count;
 }
 
+static int oom_adjust_permission(struct inode *inode, int mask)
+{
+	uid_t uid;
+	struct task_struct *p;
+
+	p = get_proc_task(inode);
+	if(p) {
+		uid = task_uid(p);
+		put_task_struct(p);
+	}
+
+	/*
+	 * System Server (uid == 1000) is granted access to oom_adj of all 
+	 * android applications (uid > 10000) as and services (uid >= 1000)
+	 */
+	if (p && (current_fsuid() == 1000) && (uid >= 1000)) {
+		if (inode->i_mode >> 6 & mask) {
+			return 0;
+		}
+	}
+
+	/* Fall back to default. */
+	return generic_permission(inode, mask);
+}
+
+static const struct inode_operations proc_oom_adjust_inode_operations = {
+	.permission	= oom_adjust_permission,
+};
+
 static const struct file_operations proc_oom_adjust_operations = {
 	.read		= oom_adjust_read,
 	.write		= oom_adjust_write,
@@ -1799,15 +1834,10 @@ static int tid_fd_revalidate(struct dentry *dentry, struct nameidata *nd)
 	if (task) {
 		files = get_files_struct(task);
 		if (files) {
-			struct file *file;
 			rcu_read_lock();
-			file = fcheck_files(files, fd);
-			if (file) {
-				unsigned f_mode = file->f_mode;
-
+			if (fcheck_files(files, fd)) {
 				rcu_read_unlock();
 				put_files_struct(files);
-
 				if (task_dumpable(task)) {
 					rcu_read_lock();
 					cred = __task_cred(task);
@@ -1818,16 +1848,7 @@ static int tid_fd_revalidate(struct dentry *dentry, struct nameidata *nd)
 					inode->i_uid = 0;
 					inode->i_gid = 0;
 				}
-
-				if (S_ISLNK(inode->i_mode)) {
-					unsigned i_mode = S_IFLNK;
-					if (f_mode & FMODE_READ)
-						i_mode |= S_IRUSR | S_IXUSR;
-					if (f_mode & FMODE_WRITE)
-						i_mode |= S_IWUSR | S_IXUSR;
-					inode->i_mode = i_mode;
-				}
-
+				inode->i_mode &= ~(S_ISUID | S_ISGID);
 				security_task_to_inode(task, inode);
 				put_task_struct(task);
 				return 1;
@@ -1851,6 +1872,8 @@ static struct dentry *proc_fd_instantiate(struct inode *dir,
 	struct dentry *dentry, struct task_struct *task, const void *ptr)
 {
 	unsigned fd = *(const unsigned *)ptr;
+	struct file *file;
+	struct files_struct *files;
  	struct inode *inode;
  	struct proc_inode *ei;
 	struct dentry *error = ERR_PTR(-ENOENT);
@@ -1860,8 +1883,26 @@ static struct dentry *proc_fd_instantiate(struct inode *dir,
 		goto out;
 	ei = PROC_I(inode);
 	ei->fd = fd;
-
+	files = get_files_struct(task);
+	if (!files)
+		goto out_iput;
 	inode->i_mode = S_IFLNK;
+
+	/*
+	 * We are not taking a ref to the file structure, so we must
+	 * hold ->file_lock.
+	 */
+	spin_lock(&files->file_lock);
+	file = fcheck_files(files, fd);
+	if (!file)
+		goto out_unlock;
+	if (file->f_mode & FMODE_READ)
+		inode->i_mode |= S_IRUSR | S_IXUSR;
+	if (file->f_mode & FMODE_WRITE)
+		inode->i_mode |= S_IWUSR | S_IXUSR;
+	spin_unlock(&files->file_lock);
+	put_files_struct(files);
+
 	inode->i_op = &proc_pid_link_inode_operations;
 	inode->i_size = 64;
 	ei->op.proc_get_link = proc_fd_link;
@@ -1873,6 +1914,12 @@ static struct dentry *proc_fd_instantiate(struct inode *dir,
 
  out:
 	return error;
+out_unlock:
+	spin_unlock(&files->file_lock);
+	put_files_struct(files);
+out_iput:
+	iput(inode);
+	goto out;
 }
 
 static struct dentry *proc_lookupfd_common(struct inode *dir,
@@ -2165,16 +2212,16 @@ static struct dentry *proc_map_files_lookup(struct inode *dir,
 		goto out;
 
 	result = ERR_PTR(-EACCES);
-	if (!ptrace_may_access(task, PTRACE_MODE_READ))
+	if (lock_trace(task))
 		goto out_put_task;
 
 	result = ERR_PTR(-ENOENT);
 	if (dname_to_vma_addr(dentry, &vm_start, &vm_end))
-		goto out_put_task;
+		goto out_unlock;
 
 	mm = get_task_mm(task);
 	if (!mm)
-		goto out_put_task;
+		goto out_unlock;
 
 	down_read(&mm->mmap_sem);
 	vma = find_exact_vma(mm, vm_start, vm_end);
@@ -2186,6 +2233,8 @@ static struct dentry *proc_map_files_lookup(struct inode *dir,
 out_no_vma:
 	up_read(&mm->mmap_sem);
 	mmput(mm);
+out_unlock:
+	unlock_trace(task);
 out_put_task:
 	put_task_struct(task);
 out:
@@ -2219,7 +2268,7 @@ proc_map_files_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		goto out;
 
 	ret = -EACCES;
-	if (!ptrace_may_access(task, PTRACE_MODE_READ))
+	if (lock_trace(task))
 		goto out_put_task;
 
 	ret = 0;
@@ -2227,12 +2276,12 @@ proc_map_files_readdir(struct file *filp, void *dirent, filldir_t filldir)
 	case 0:
 		ino = inode->i_ino;
 		if (filldir(dirent, ".", 1, 0, ino, DT_DIR) < 0)
-			goto out_put_task;
+			goto out_unlock;
 		filp->f_pos++;
 	case 1:
 		ino = parent_ino(dentry);
 		if (filldir(dirent, "..", 2, 1, ino, DT_DIR) < 0)
-			goto out_put_task;
+			goto out_unlock;
 		filp->f_pos++;
 	default:
 	{
@@ -2243,7 +2292,7 @@ proc_map_files_readdir(struct file *filp, void *dirent, filldir_t filldir)
 
 		mm = get_task_mm(task);
 		if (!mm)
-			goto out_put_task;
+			goto out_unlock;
 		down_read(&mm->mmap_sem);
 
 		nr_files = 0;
@@ -2273,7 +2322,7 @@ proc_map_files_readdir(struct file *filp, void *dirent, filldir_t filldir)
 					flex_array_free(fa);
 				up_read(&mm->mmap_sem);
 				mmput(mm);
-				goto out_put_task;
+				goto out_unlock;
 			}
 			for (i = 0, vma = mm->mmap, pos = 2; vma;
 					vma = vma->vm_next) {
@@ -2318,6 +2367,8 @@ proc_map_files_readdir(struct file *filp, void *dirent, filldir_t filldir)
 	}
 	}
 
+out_unlock:
+	unlock_trace(task);
 out_put_task:
 	put_task_struct(task);
 out:
@@ -3011,7 +3062,7 @@ static const struct pid_entry tgid_base_stuff[] = {
 	REG("cgroup",  S_IRUGO, proc_cgroup_operations),
 #endif
 	INF("oom_score",  S_IRUGO, proc_oom_score),
-	REG("oom_adj",    S_IRUGO|S_IWUSR, proc_oom_adjust_operations),
+	ANDROID("oom_adj",S_IRUGO|S_IWUSR, oom_adjust),
 	REG("oom_score_adj", S_IRUGO|S_IWUSR, proc_oom_score_adj_operations),
 #ifdef CONFIG_AUDITSYSCALL
 	REG("loginuid",   S_IWUSR|S_IRUGO, proc_loginuid_operations),
