@@ -122,6 +122,8 @@ static void fb_init_layer(struct fb_info *info)
 	int   pixel  = priv->dpc.pixelbit/8;
 	int   format = priv->dpc.format;
 
+	soc_dpc_set_layer_enable(module, layer, 1);
+
 	#ifdef CONFIG_FB_NEXELL_CLONE
 	if (1 == module) {
 		struct fb_private *priv_1 = g_fb_private[0];
@@ -153,7 +155,6 @@ static void fb_init_layer(struct fb_info *info)
 	/* backlight depend on board */
 	int format = priv->dpc.format;
 	soc_dpc_set_out_disable(module);
-	soc_dpc_set_rgb_enable(module, layer, 0);
 	soc_dpc_set_rgb_format(module, layer, format, xres, yres, pixel);
 	soc_dpc_set_rgb_address(module, layer, pbase, pixel, xres*pixel, 0);
 	soc_dpc_set_out_enable(module);

@@ -139,9 +139,11 @@ static void fb_init_layer(struct fb_info *info)
 	int   yres   = priv->dpc.y_res;
 	int   pixel  = priv->dpc.pixelbit/8;
 	int   format = priv->dpc.format;
-	int   enabled = soc_dpc_get_layer_enable(module, layer);
+	//int   enabled = 1; //soc_dpc_get_layer_enable(module, layer);
 
-	printk(KERN_INFO "%s: layer=%d, enabled=%d\n", __FUNCTION__, layer, enabled);
+	soc_dpc_set_layer_enable(module, layer, 1);
+
+	printk(KERN_INFO "%s: layer=%d, enabled=%d\n", __FUNCTION__, layer, 1);
 	if (layer == CFG_DISP_LAYER_SCREEN) {
 		soc_dpc_set_rgb_enable(module, layer, 1);
 		return;
@@ -157,27 +159,21 @@ static void fb_init_layer(struct fb_info *info)
 	#endif
 
 	if (IS_YUV_LAYER(layer)) {
-		soc_dpc_set_vid_enable(module, 0);
 		soc_dpc_set_vid_format(module, FOURCC_YV12, xres, yres);
 		soc_dpc_set_vid_address(module, pbase, 4096, pbase+2048, 4096, pbase+2048+4096*yres/2, 4096, 0);
 		soc_dpc_set_vid_position(module, 0, 0, xres, yres, 0);
 		soc_dpc_set_vid_priority(module, 2);
-		soc_dpc_set_vid_enable(module, enabled);
+		soc_dpc_set_vid_enable(module, 1);
 		printk(KERN_INFO "%s: %d * %d - %d bpp (phys=%08x virt=0x%08x size=%d)\n",
 			info->fix.id, xres, yres, pixel*8, pbase, (u_int)priv->vbase, priv->length);
 		return;
 	}
 
 	soc_dpc_set_out_disable(module);
-	soc_dpc_set_rgb_enable(module, layer, 0);
 	soc_dpc_set_rgb_format(module, layer, format, xres, yres, pixel);
 	soc_dpc_set_rgb_address(module, layer, pbase, pixel, xres*pixel, 0);
 	soc_dpc_set_out_enable(module);
-#ifdef CONFIG_ANDROID
 	soc_dpc_set_rgb_enable(module, layer, 1);
-#else
-	soc_dpc_set_rgb_enable(module, layer, enabled);
-#endif
 
 #endif
 	printk(KERN_INFO "%s: %d * %d - %d bpp (phys=%08x virt=0x%08x size=%d)\n",
@@ -672,7 +668,7 @@ static int nxfb_ops_set_par(struct fb_info *info)
 	struct fb_var_screeninfo *var = &info->var;
 	struct fb_private *priv = info->par;
 	int layer = priv->dpc.layer;
-	int enabled = soc_dpc_get_layer_enable(priv->dpc.module, priv->dpc.layer);
+	//int enabled = 1; //soc_dpc_get_layer_enable(priv->dpc.module, priv->dpc.layer);
 	union lf1000fb_cmd c;
 	DBGOUT("%s\n", __func__);
 
@@ -709,13 +705,12 @@ static int nxfb_ops_set_par(struct fb_info *info)
 			info->fix.line_length = var->xres * 2;
 		else
 			info->fix.line_length = 4096;
-		soc_dpc_set_vid_enable(priv->dpc.module, 0);
 		soc_dpc_get_vid_position(priv->dpc.module, &c.position.left, &c.position.top, &c.position.right, &c.position.bottom);
 		soc_dpc_set_vid_format(priv->dpc.module, priv->dpc.format, var->xres, var->yres);
 		soc_dpc_set_vid_address(priv->dpc.module, priv->pbase, info->fix.line_length, priv->pbase+2048, info->fix.line_length, priv->pbase+2048+info->fix.line_length*var->yres/2, info->fix.line_length, 0);
 		soc_dpc_set_vid_position(priv->dpc.module, c.position.left, c.position.top, c.position.left+var->xres, c.position.top+var->yres, 0);
 		soc_dpc_set_vid_priority(priv->dpc.module, NONSTD_TO_POS(var->nonstd));
-		soc_dpc_set_vid_enable(priv->dpc.module, enabled);
+		soc_dpc_set_vid_enable(priv->dpc.module, 1);
 		return 0;
 	}
 
@@ -737,13 +732,12 @@ static int nxfb_ops_set_par(struct fb_info *info)
 	/* activate this new configuration */
 	fb_set_var_pixfmt(var, info);
 	layer = NONSTD_TO_POS(var->nonstd);
-	enabled = soc_dpc_get_layer_enable(priv->dpc.module, layer);
-	soc_dpc_set_rgb_enable(priv->dpc.module, layer, 0);
+	//enabled = 1; //soc_dpc_get_layer_enable(priv->dpc.module, layer);
 	soc_dpc_get_rgb_position(priv->dpc.module, layer, &c.position.left, &c.position.top);
 	soc_dpc_set_rgb_format(priv->dpc.module, layer, fb_get_var_format(var), var->xres, var->yres, var->bits_per_pixel/8);
 	soc_dpc_set_rgb_position(priv->dpc.module, layer, c.position.left, c.position.top, false);
 	soc_dpc_set_rgb_address(priv->dpc.module, layer, priv->pbase, var->bits_per_pixel/8, info->fix.line_length, 0);
-	soc_dpc_set_rgb_enable(priv->dpc.module, layer, enabled);
+	soc_dpc_set_rgb_enable(priv->dpc.module, layer, 1);
 	fb_dbg_var_info(var);
 
 	return 0;
@@ -779,9 +773,9 @@ static int nxfb_ops_blank(int blank_mode, struct fb_info *info)
 		break;
 	case FB_BLANK_NORMAL:
 		if (IS_YUV_LAYER(priv->dpc.layer))
-			soc_dpc_set_vid_enable(priv->dpc.module, 0);
+			soc_dpc_set_vid_enable(priv->dpc.module, 1);
 		else
-			soc_dpc_set_rgb_enable(priv->dpc.module, NONSTD_TO_POS(info->var.nonstd), 0);
+			soc_dpc_set_rgb_enable(priv->dpc.module, NONSTD_TO_POS(info->var.nonstd), 1);
 		break;
 	}
 
@@ -937,7 +931,7 @@ static int lf1000fb_ioctl(struct fb_info *info, unsigned int cmd,
 	void __user *argp = (void __user *)arg;
 	struct fb_private *priv = info->par;
 	union lf1000fb_cmd c, s;
-	int format, width, height, depth, enable;
+	int format, width, height, depth; //, enable;
 	int layer = IS_YUV_LAYER(priv->dpc.layer) ? priv->dpc.layer : NONSTD_TO_POS(info->var.nonstd);
 
 	DBGOUT("%s: ioctl=%08X, layer=%d, layer=%d\n", __func__, cmd, priv->dpc.layer, layer);
@@ -955,9 +949,9 @@ static int lf1000fb_ioctl(struct fb_info *info, unsigned int cmd,
 			if (copy_from_user((void *)&c, argp, sizeof(struct lf1000fb_blend_cmd)))
 				return -EFAULT;
 			if (IS_YUV_LAYER(priv->dpc.layer))
-				soc_dpc_set_vid_color(priv->dpc.module, VID_COL_ALPHA, c.blend.alpha, c.blend.enable);
+				soc_dpc_set_vid_color(priv->dpc.module, VID_COL_ALPHA, c.blend.alpha, 1);
 			else
-				soc_dpc_set_rgb_color(priv->dpc.module, layer, RGB_COL_ALPHA, c.blend.alpha, c.blend.enable);
+				soc_dpc_set_rgb_color(priv->dpc.module, layer, RGB_COL_ALPHA, c.blend.alpha, 1);
 			break;
 
 		case LF1000FB_IOCGALPHA:
