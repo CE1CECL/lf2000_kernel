@@ -285,7 +285,12 @@ config ARCADYAN_BCM4319
 	select BCM4319
 	---help---
 	  This driver supports the BCM4319 based Arcadyan Wifi module.
-	
+
+config WIFI_CONTROL_FUNC
+	bool "Enable WiFi control function abstraction"
+	help
+	  Enables Power/Reset/Carddetect function abstraction
+
 source "drivers/net/wireless/ath/Kconfig"
 source "drivers/net/wireless/b43/Kconfig"
 source "drivers/net/wireless/b43legacy/Kconfig"
