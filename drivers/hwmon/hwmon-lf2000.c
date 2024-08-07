@@ -49,7 +49,6 @@
 #include <mach/lfp100.h>
 #include <mach/adc.h>
 #include <mach/soc.h>
-#include <mach/board_revisions.h>
 
 #ifdef CONFIG_ARCH_LF1000
 #include <mach/adc.h>
@@ -63,6 +62,7 @@
 #include <asm/uaccess.h>
 #include <asm/system_info.h>
 
+#include <mach/board_revisions.h>
 
 /*
  * power hardware
@@ -1107,9 +1107,6 @@ fail_usb_nogpio:
 unsigned int detect_usb_charger(void)
 {
 	int ret = 0;
-	int detect;
-	// Crashes Lucy systems
-	//detect = gpio_get_value(USB_CHG_DETECT);
 	
 	switch(system_rev) {
 		case LF2000_BOARD_RIO:
@@ -1159,7 +1156,7 @@ unsigned int detect_usb_charger(void)
 			break;
 	}
 	
-	printk(KERN_INFO "%s Detect status = %d \n", __FUNCTION__, detect);
+	printk(KERN_INFO "%s Detect status = %d \n", __FUNCTION__, ret);
 	return ret;
 }
 EXPORT_SYMBOL(detect_usb_charger);
