@@ -40,7 +40,6 @@
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <asm/div64.h>
-#include <asm/system_info.h>
 #include <linux/major.h>
 #include <linux/pm.h>
 
@@ -51,11 +50,13 @@
 #include <mach/dpc.h>
 #include <mach/vmem.h>
 #include <mach/lf2000_lcd.h>
-#include <mach/board_revisions.h>
 
 #ifdef CONFIG_FB_NEXELL_LF1000_EXTENSION
 #include <linux/lf1000/lf1000fb.h>
 #endif
+
+#include <asm/system_info.h>
+#include <mach/board_revisions.h>
 
 #if (0)
 #define DBGOUT(msg...)		{ printk(KERN_INFO "fb: " msg); }
@@ -139,8 +140,6 @@ static void fb_init_layer(struct fb_info *info)
 	int   yres   = priv->dpc.y_res;
 	int   pixel  = priv->dpc.pixelbit/8;
 	int   format = priv->dpc.format;
-	//int   enabled = 1; //soc_dpc_get_layer_enable(module, layer);
-
 	soc_dpc_set_layer_enable(module, layer, 1);
 
 	printk(KERN_INFO "%s: layer=%d, enabled=%d\n", __FUNCTION__, layer, 1);
@@ -159,6 +158,7 @@ static void fb_init_layer(struct fb_info *info)
 	#endif
 
 	if (IS_YUV_LAYER(layer)) {
+		soc_dpc_set_vid_enable(module, 0);
 		soc_dpc_set_vid_format(module, FOURCC_YV12, xres, yres);
 		soc_dpc_set_vid_address(module, pbase, 4096, pbase+2048, 4096, pbase+2048+4096*yres/2, 4096, 0);
 		soc_dpc_set_vid_position(module, 0, 0, xres, yres, 0);
@@ -170,6 +170,7 @@ static void fb_init_layer(struct fb_info *info)
 	}
 
 	soc_dpc_set_out_disable(module);
+	soc_dpc_set_rgb_enable(module, layer, 0);
 	soc_dpc_set_rgb_format(module, layer, format, xres, yres, pixel);
 	soc_dpc_set_rgb_address(module, layer, pbase, pixel, xres*pixel, 0);
 	soc_dpc_set_out_enable(module);
@@ -258,38 +259,37 @@ static int fb_alloc_memory(struct fb_info *info)
 
 	/* allocate from system memory */
 	priv->length = PAGE_ALIGN(length);
-	if(is_rio(system_rev)) {
-		/* max vmem block alloc = 16MB block (4K x 4K) */
-		for (size = min(length, (4096 << 12)); size > 0 ; length -= size, size = length)
-		{
-			int ret;
-			VM_IMEMORY vm;
-			int vmem_alloc(VM_IMEMORY *pmem, int minor, void *listhead);
+if (is_rio(system_rev)) {
+	/* max vmem block alloc = 16MB block (4K x 4K) */
+	for (size = min(length, (4096 << 12)); size > 0 ; length -= size, size = length)
+	{
+		int ret;
+		VM_IMEMORY vm;
+		int vmem_alloc(VM_IMEMORY *pmem, int minor, void *listhead);
 
-			memset(&vm, 0, sizeof(vm));
-			vm.MemWidth = 4096;
-			vm.MemHeight = size / 4096;
-			vm.Flags = VMEM_BLOCK_BUFFER;
-			vm.HorAlign = 1;
-			vm.VerAlign = 1;
-			ret = vmem_alloc(&vm, 0, NULL);
+		memset(&vm, 0, sizeof(vm));
+		vm.MemWidth = 4096;
+		vm.MemHeight = size / 4096;
+		vm.Flags = VMEM_BLOCK_BUFFER;
+		vm.HorAlign = 1;
+		vm.VerAlign = 1;
+		ret = vmem_alloc(&vm, 0, NULL);
 
-			printk(KERN_INFO "%s: vmem ret=%d, phys=%08x, virt=%08x\n", __func__, ret, vm.Address, vm.Virtual);
+		printk(KERN_INFO "%s: vmem ret=%d, phys=%08x, virt=%08x\n", __func__, ret, vm.Address, vm.Virtual);
 
-			if (priv->pbase)
-				continue;
+		if (priv->pbase)
+			continue;
 
-			priv->pbase = vm.Address & ~0x20000000UL;
-			priv->vbase = (void*)vm.Virtual;
-		}
-	} else {
+		priv->pbase = vm.Address & ~0x20000000UL;
+		priv->vbase = (void*)vm.Virtual;
+	}
+} else {
 	priv->vbase  = dma_alloc_writecombine(
 						priv->device,
 						priv->length,
 						&priv->pbase,
 						GFP_KERNEL);
-    }
-
+}
 
 	if(priv->vbase) {
 		/* leave bootloader framebuffer memory alone (no memset) */
@@ -668,7 +668,7 @@ static int nxfb_ops_set_par(struct fb_info *info)
 	struct fb_var_screeninfo *var = &info->var;
 	struct fb_private *priv = info->par;
 	int layer = priv->dpc.layer;
-	//int enabled = 1; //soc_dpc_get_layer_enable(priv->dpc.module, priv->dpc.layer);
+	soc_dpc_set_layer_enable(priv->dpc.module, priv->dpc.layer, 1);
 	union lf1000fb_cmd c;
 	DBGOUT("%s\n", __func__);
 
@@ -705,6 +705,7 @@ static int nxfb_ops_set_par(struct fb_info *info)
 			info->fix.line_length = var->xres * 2;
 		else
 			info->fix.line_length = 4096;
+		soc_dpc_set_vid_enable(priv->dpc.module, 0);
 		soc_dpc_get_vid_position(priv->dpc.module, &c.position.left, &c.position.top, &c.position.right, &c.position.bottom);
 		soc_dpc_set_vid_format(priv->dpc.module, priv->dpc.format, var->xres, var->yres);
 		soc_dpc_set_vid_address(priv->dpc.module, priv->pbase, info->fix.line_length, priv->pbase+2048, info->fix.line_length, priv->pbase+2048+info->fix.line_length*var->yres/2, info->fix.line_length, 0);
@@ -732,7 +733,8 @@ static int nxfb_ops_set_par(struct fb_info *info)
 	/* activate this new configuration */
 	fb_set_var_pixfmt(var, info);
 	layer = NONSTD_TO_POS(var->nonstd);
-	//enabled = 1; //soc_dpc_get_layer_enable(priv->dpc.module, layer);
+	soc_dpc_set_layer_enable(priv->dpc.module, layer, 1);
+	soc_dpc_set_rgb_enable(priv->dpc.module, layer, 0);
 	soc_dpc_get_rgb_position(priv->dpc.module, layer, &c.position.left, &c.position.top);
 	soc_dpc_set_rgb_format(priv->dpc.module, layer, fb_get_var_format(var), var->xres, var->yres, var->bits_per_pixel/8);
 	soc_dpc_set_rgb_position(priv->dpc.module, layer, c.position.left, c.position.top, false);
@@ -931,7 +933,7 @@ static int lf1000fb_ioctl(struct fb_info *info, unsigned int cmd,
 	void __user *argp = (void __user *)arg;
 	struct fb_private *priv = info->par;
 	union lf1000fb_cmd c, s;
-	int format, width, height, depth; //, enable;
+	int format, width, height, depth, enable;
 	int layer = IS_YUV_LAYER(priv->dpc.layer) ? priv->dpc.layer : NONSTD_TO_POS(info->var.nonstd);
 
 	DBGOUT("%s: ioctl=%08X, layer=%d, layer=%d\n", __func__, cmd, priv->dpc.layer, layer);
@@ -1014,7 +1016,7 @@ static int lf1000fb_ioctl(struct fb_info *info, unsigned int cmd,
 			if (copy_to_user(argp, (void *)&c, sizeof(struct lf1000fb_vidscale_cmd)))
 				return -EFAULT;
 			break;
-                /*
+/*
 		case FBIOGET_VBLANK:
 			{
 			struct fb_vblank vblank;
@@ -1024,8 +1026,8 @@ static int lf1000fb_ioctl(struct fb_info *info, unsigned int cmd,
 			if (copy_to_user(argp, (void *)&vblank, sizeof(struct fb_vblank)))
 				return -EFAULT;
 			}
-			break; */
-
+			break;
+*/
 		default:
 			return -ENOIOCTLCMD;
 	}
