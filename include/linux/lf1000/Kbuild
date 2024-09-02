@@ -1,2 +1,0 @@
-header-y += screen.h
-header-y += lf1000fb.h
