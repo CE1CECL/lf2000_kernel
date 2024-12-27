@@ -61,5 +61,9 @@ obj-$(CONFIG_MWIFIEX)	+= mwifiex/
 
 obj-$(CONFIG_BCMDHD)	+= bcmdhd/
 
+obj-$(CONFIG_BCMDHD)	+= bcmdhd/
+
 obj-$(CONFIG_BRCMFMAC)	+= brcm80211/
 obj-$(CONFIG_BRCMSMAC)	+= brcm80211/
+
+obj-$(CONFIG_ARCADYAN_BCM4319)	+= arcadyan/
