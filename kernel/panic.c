@@ -24,9 +24,11 @@
 #include <linux/nmi.h>
 #include <linux/dmi.h>
 
+#if 0
 #ifdef CONFIG_ARCH_NXP3200
 #include <mach/alive.h>
 #define PANIC_MAX_COUNT 3
+#endif
 #endif
 
 #define PANIC_TIMER_STEP 100
@@ -85,8 +87,10 @@ void panic(const char *fmt, ...)
 	long i, i_next = 0;
 	int state = 0;
 
+#if 0
 #ifdef CONFIG_ARCH_NXP3200
 	unsigned panic_count;
+#endif
 #endif
 
 	/*
@@ -124,6 +128,7 @@ void panic(const char *fmt, ...)
 		dump_stack();
 #endif
 
+#if 0
 #ifdef CONFIG_ARCH_NXP3200
 	panic_count = alive_get_panic();
 	panic_count++;
@@ -131,6 +136,7 @@ void panic(const char *fmt, ...)
 		panic_count = PANIC_MAX_COUNT;
 	alive_set_panic(panic_count);
 	panic_timeout = 1;
+#endif
 #endif
 
 	/*

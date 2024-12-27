@@ -10,7 +10,7 @@
 static struct gpio_keys_button lf2000_buttons[] = {
 	{
 		.type	= EV_KEY,
-		.code	= KEY_A,
+		.code	= KEY_ENTER,
 		.gpio	= BUTTON_A,
 		.desc	= "A Button",
 		.active_low	= 1,
@@ -18,7 +18,7 @@ static struct gpio_keys_button lf2000_buttons[] = {
 	},
 	{
 		.type	= EV_KEY,
-		.code	= KEY_B,
+		.code	= KEY_BACK,
 		.gpio	= BUTTON_B,
 		.desc	= "B Button",
 		.active_low	= 1,
@@ -58,7 +58,7 @@ static struct gpio_keys_button lf2000_buttons[] = {
 	},
 	{
 		.type	= EV_KEY,
-		.code	= KEY_RED,
+		.code	= KEY_RESERVED,
 		.gpio	= BUTTON_RED,
 		.desc	= "Red Button",
 		.active_low	= 1,
@@ -82,7 +82,7 @@ static struct gpio_keys_button lf2000_buttons[] = {
 	},
 	{
 		.type	= EV_KEY,
-		.code	= KEY_L,
+		.code	= KEY_BRIGHTNESSDOWN,
 		.gpio	= SHOULDER_LEFT,
 		.desc	= "Left Shoulder",
 		.active_low	= 1,
@@ -90,7 +90,7 @@ static struct gpio_keys_button lf2000_buttons[] = {
 	},
 	{
 		.type	= EV_KEY,
-		.code	= KEY_R,
+		.code	= KEY_BRIGHTNESSUP,
 		.gpio	= SHOULDER_RIGHT,
 		.desc	= "Right Shoulder",
 		.active_low	= 1,
@@ -98,7 +98,7 @@ static struct gpio_keys_button lf2000_buttons[] = {
 	},
 	{
 		.type	= EV_KEY,
-		.code	= KEY_M,
+		.code	= KEY_BACK,
 		.gpio	= BUTTON_HOME,
 		.desc	= "Home Button",
 		.active_low	= 1,
@@ -106,7 +106,7 @@ static struct gpio_keys_button lf2000_buttons[] = {
 	},
 	{
 		.type	= EV_KEY,
-		.code	= KEY_H,
+		.code	= KEY_SCALE,
 		.gpio	= BUTTON_HINT,
 		.desc	= "Hint Button",
 		.active_low	= 1,
@@ -114,7 +114,7 @@ static struct gpio_keys_button lf2000_buttons[] = {
 	},
 	{
 		.type	= EV_KEY,
-		.code	= KEY_P,
+		.code	= KEY_MENU,
 		.gpio	= BUTTON_PAUSE,
 		.desc	= "Pause Button",
 		.active_low	= 1,
@@ -122,7 +122,7 @@ static struct gpio_keys_button lf2000_buttons[] = {
 	},
 	{
 		.type	= EV_KEY,
-		.code	= KEY_X,
+		.code	= KEY_RESERVED,
 		.gpio	= BUTTON_BRIGHTNESS,
 		.desc	= "Brightness Button",
 		.active_low	= 1,
@@ -130,7 +130,7 @@ static struct gpio_keys_button lf2000_buttons[] = {
 	},
 	{
 		.type	= EV_KEY,
-		.code	= KEY_ESC,
+		.code	= KEY_HOME,
 		.gpio	= BUTTON_ESC,
 		.desc	= "Escape Button",
 		.active_low	= 1,

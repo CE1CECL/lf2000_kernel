@@ -268,6 +268,24 @@ config MWL8K
 	  To compile this driver as a module, choose M here: the module
 	  will be called mwl8k.  If unsure, say N.
 
+config BCM4319
+	bool "BCM4319 build support"
+	depends on MMC || SPI || USB
+	select WIRELESS_EXT
+	select WEXT_CORE
+	select WEXT_PROC
+	select WEXT_PRIV
+	---help---
+	  Kernel support for the bcm4319 driver, dhd-cdc-sdmmc-gpl. This is
+	  required for building the driver both in and out of tree.
+	  
+config ARCADYAN_BCM4319
+	tristate "Arcadyan BCM4319 Wifi Driver"
+	depends on MMC
+	select BCM4319
+	---help---
+	  This driver supports the BCM4319 based Arcadyan Wifi module.
+
 config WIFI_CONTROL_FUNC
 	bool "Enable WiFi control function abstraction"
 	help

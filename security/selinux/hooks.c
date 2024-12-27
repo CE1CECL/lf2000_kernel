@@ -421,7 +421,8 @@ static int sb_finish_set_opts(struct super_block *sb)
 	if (!strcmp(sb->s_type->name, "sysfs") ||
 	    !strcmp(sb->s_type->name, "pstore") ||
 	    !strcmp(sb->s_type->name, "debugfs") ||
-	    !strcmp(sb->s_type->name, "rootfs"))
+	    !strcmp(sb->s_type->name, "rootfs") ||
+	    !strcmp(sb->s_type->name, "ubifs"))
 		sbsec->flags |= SE_SBLABELSUPP;
 
 	/* Initialize the root inode. */

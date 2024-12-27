@@ -1108,9 +1108,6 @@ fail_usb_nogpio:
 unsigned int detect_usb_charger(void)
 {
 	int ret = 0;
-	int detect;
-	
-	detect = gpio_get_value(USB_CHG_DETECT);
 	
 	switch(system_rev) {
 		case LF2000_BOARD_RIO:
@@ -1120,7 +1117,7 @@ unsigned int detect_usb_charger(void)
 		case LF2000_BOARD_RIO_BETA_1024_600_700_400:
 		case LF2000_BOARD_RIO_BETA_800_480_700_400:
 		case LF2000_BOARD_RIO_BETA_1024_600_550_275:
-			if (detect)
+			if (gpio_get_value(USB_CHG_DETECT))
 				ret = 1;
 			break;
 		case LF2000_BOARD_RIO_EP_550_275:
@@ -1130,7 +1127,7 @@ unsigned int detect_usb_charger(void)
 		case LF2000_BOARD_RIO_EP_800_400:
 		case LF2000_BOARD_RIO_FEP_800_327P67:
 		case LF2000_BOARD_RIO_FEP_800_327P666:
-			if (!detect)
+			if (!gpio_get_value(USB_CHG_DETECT))
 				ret = 1;
 			break;
 		case LF2000_BOARD_LUCY:
@@ -1160,7 +1157,7 @@ unsigned int detect_usb_charger(void)
 			break;
 	}
 	
-	printk(KERN_INFO "%s Detect status = %d \n", __FUNCTION__, detect);
+	printk(KERN_INFO "%s Detect status = %d \n", __FUNCTION__, ret);
 	return ret;
 }
 EXPORT_SYMBOL(detect_usb_charger);

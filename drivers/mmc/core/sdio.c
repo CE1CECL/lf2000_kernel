@@ -1223,6 +1223,8 @@ err:
 	return err;
 }
 
+#ifdef CONFIG_BCM4319
+/* From android-2.6.29 */
 int sdio_reset_comm(struct mmc_card *card)
 {
 	struct mmc_host *host = card->host;
@@ -1246,10 +1248,53 @@ int sdio_reset_comm(struct mmc_card *card)
 		goto err;
 	}
 
-	err = mmc_sdio_init_card(host, host->ocr, card, 0);
+	err = mmc_send_io_op_cond(host, host->ocr, &ocr);
 	if (err)
 		goto err;
 
+	if (mmc_host_is_spi(host)) {
+		err = mmc_spi_set_crc(host, use_spi_crc);
+		if (err)
+		goto err;
+	}
+
+	if (!mmc_host_is_spi(host)) {
+		err = mmc_send_relative_addr(host, &card->rca);
+		if (err)
+			goto err;
+		mmc_set_bus_mode(host, MMC_BUSMODE_PUSHPULL);
+	}
+	if (!mmc_host_is_spi(host)) {
+		err = mmc_select_card(card);
+		if (err)
+			goto err;
+	}
+
+	/*
+	 * Switch to high-speed (if supported).
+	 */
+	err = sdio_enable_hs(card);
+	if (err)
+		goto err;
+
+	/*
+	 * Change to the card's maximum speed.
+	 */
+	if (mmc_card_highspeed(card)) {
+		/*
+		 * The SDIO specification doesn't mention how
+		 * the CIS transfer speed register relates to
+		 * high-speed, but it seems that 50 MHz is
+		 * mandatory.
+		 */
+		mmc_set_clock(host, 50000000);
+	} else {
+		mmc_set_clock(host, card->cis.max_dtr);
+	}
+
+	err = sdio_enable_wide(card);
+	if (err)
+		goto err;
 	mmc_release_host(host);
 	return 0;
 err:
@@ -1259,3 +1304,4 @@ err:
 	return err;
 }
 EXPORT_SYMBOL(sdio_reset_comm);
+#endif /* CONFIG_BCM4319 */
