@@ -58,7 +58,7 @@ static struct gpio_keys_button lf2000_buttons[] = {
 	},
 	{
 		.type	= EV_KEY,
-		.code	= KEY_RESERVED,
+		.code	= KEY_RED,
 		.gpio	= BUTTON_RED,
 		.desc	= "Red Button",
 		.active_low	= 1,
@@ -82,7 +82,7 @@ static struct gpio_keys_button lf2000_buttons[] = {
 	},
 	{
 		.type	= EV_KEY,
-		.code	= KEY_BRIGHTNESSDOWN,
+		.code	= KEY_MENU,
 		.gpio	= SHOULDER_LEFT,
 		.desc	= "Left Shoulder",
 		.active_low	= 1,
@@ -90,7 +90,7 @@ static struct gpio_keys_button lf2000_buttons[] = {
 	},
 	{
 		.type	= EV_KEY,
-		.code	= KEY_BRIGHTNESSUP,
+		.code	= KEY_ENTER,
 		.gpio	= SHOULDER_RIGHT,
 		.desc	= "Right Shoulder",
 		.active_low	= 1,
@@ -106,7 +106,7 @@ static struct gpio_keys_button lf2000_buttons[] = {
 	},
 	{
 		.type	= EV_KEY,
-		.code	= KEY_SCALE,
+		.code	= KEY_HOME,
 		.gpio	= BUTTON_HINT,
 		.desc	= "Hint Button",
 		.active_low	= 1,
@@ -122,7 +122,7 @@ static struct gpio_keys_button lf2000_buttons[] = {
 	},
 	{
 		.type	= EV_KEY,
-		.code	= KEY_RESERVED,
+		.code	= KEY_BRIGHTNESS_CYCLE,
 		.gpio	= BUTTON_BRIGHTNESS,
 		.desc	= "Brightness Button",
 		.active_low	= 1,
