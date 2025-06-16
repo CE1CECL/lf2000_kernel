@@ -1527,7 +1527,7 @@ static int zforce_create_sysfs(struct zforce *zf)
 	if(0 != (sysfs_create_group(&zf->dev->kobj, &zforce_attr_group)))
 		ret = -ENOMEM;
 	
-	err = sysfs_create_link(plat_kobj, &zf->dev->kobj, "lf2000-touchscreen");
+	err = sysfs_create_link(plat_kobj, &zf->dev->kobj, "zforce");
 	if(err)
 	{
 		dev_info(zf->dev, "could not create device link from %s to %s err %d\n", plat_kobj->name,  (zf->dev->kobj).name, err);
@@ -1544,7 +1544,7 @@ static void zforce_delete_sysfs(struct zforce *zf)
 
 	sysfs_remove_group(&zf->dev->kobj, &zforce_attr_group);
 	
-	sysfs_remove_link(plat_kobj, "lf2000-touchscreen");
+	sysfs_remove_link(plat_kobj, "zforce");
 }
 
 #ifdef CONFIG_PM
