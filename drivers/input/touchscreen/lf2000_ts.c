@@ -298,9 +298,9 @@ static struct touch {
 	TS_DEBOUNCE_DOWN,		// debounce_in_samples_down
 	TS_DEBOUNCE_UP,			// debounce_in_samples_up
 	REMASK_REPORT,			// report_events
-	TS_DELAY_IN_US,			// delay_in_us
-	TS_Y_DELAY_IN_US,		// y_delay_in_us
-	TNT_DELAY_IN_US,		// tnt_delay_in_us
+	1, // TS_DELAY_IN_US,			// delay_in_us
+	1, // TS_Y_DELAY_IN_US,		// y_delay_in_us
+	1, // TNT_DELAY_IN_US,		// tnt_delay_in_us
 	4,			// first_adc;		// 0=didj-ts, 4=Leapster 3
 	0,          // ADC Channel number for X1
 	0,			// ADC Channel number for X2
@@ -310,21 +310,21 @@ static struct touch {
 	0, 			// adc_x2
 	0, 			// adc_y
 	0, 			// adc_y2
-	-1,			// averaging
+	-1, // -1,			// averaging
 	0,			// tails
 	0,			// scanning
 	0,			// scan_ctr
-	0,			// tnt_mode
-	{0,0,0},	// tnt_plane[3]
+	0, // 0,			// tnt_mode
+	{-2, -360, 158942}, // {0,0,0},	// tnt_plane[3]
 	0,			// adc_p1
 	0,			// adc_p2
 	0,			// adc_pressure
 	1024,		// adc_tnt1
 	1024,		// adc_tnt2
-	MAX_TNT_DOWN,	//adc_max_tnt_down
-	MIN_TNT_UP,		// adc_min_tnt_up
-	MAX_DELTA_TNT,	// adc_max_delta_tnt
-	{468, 471, 487, 495, 509, 524, 553, 575, 612},	// pressure_curve[]
+	23, // MAX_TNT_DOWN,	//adc_max_tnt_down
+	521, // MIN_TNT_UP,		// adc_min_tnt_up
+	5, // MAX_DELTA_TNT,	// adc_max_delta_tnt
+	{651, 655, 676, 686, 705, 724, 761, 790, 837}, // {468, 471, 487, 495, 509, 524, 553, 575, 612},	// pressure_curve[]
 	TSTATE_UP,	// ts_state;
 	0, 0,		// touch_x, touch_y
 	0,			// touch_pressure
@@ -333,7 +333,8 @@ static struct touch {
 	0, 0,		// screen_last_x, screen_last_y
 	0,			// stylus_down_count
 	0, 			// stylus_up_count
-	{	TS_A0, TS_A1, TS_A2, TS_A3, TS_A4, TS_A5, TS_A6	}, // a[7]
+	/* 38606 213 -3981839 167 38546 -1623143 30636 */ // 'cat "/flags/pointercal"'
+	{-3981839, 38606, 213, -1623143, 167, 38546, 30636}, // {	TS_A0, TS_A1, TS_A2, TS_A3, TS_A4, TS_A5, TS_A6	}, // a[7]
 #ifdef TS_TIMING
 	0, 0, 0, 0,	// min_us, max_us, N_us, sum_us;
 #endif
