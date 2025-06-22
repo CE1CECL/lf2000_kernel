@@ -1914,7 +1914,8 @@ extern void soc_sysfs_init(void);
  * GPIO Button driver
  */
 //#if defined(CONFIG_KEYBOARD_GPIO)
-extern struct platform_device lf2000_gpio_buttons;
+extern struct platform_device lf2000pad_gpio_buttons;
+extern struct platform_device lf2000ster_gpio_buttons;
 //#endif
 
 /*------------------------------------------------------------------------------
@@ -2127,7 +2128,16 @@ void __init cpu_device(void)
 
 //#if defined(CONFIG_KEYBOARD_GPIO)
 	printk("plat: add device gpio_keyboard\n");
-	platform_device_register(&lf2000_gpio_buttons);
+	switch (system_rev) {
+		case LF2000_BOARD_LUCY:
+		case LF2000_BOARD_LUCY_PP:
+		case LF2000_BOARD_LUCY_CIP:
+			platform_device_register(&lf2000ster_gpio_buttons);
+			break;
+		default:
+			platform_device_register(&lf2000pad_gpio_buttons);
+			break;
+	}
 //#endif
 
 #if defined(CONFIG_LF2000_IDCT) || defined(CONFIG_LF2000_IDCT_MODULE)
