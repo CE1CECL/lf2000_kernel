@@ -141,11 +141,7 @@ static struct fb_plat_data fb0_platdata_320_240 = {
 	.y_res		= CFG_DISP_PRI_RESOL_HEIGHT_320_240,
 	.pixelbit	= CFG_DISP_SCREEN_PIXEL_BYTE * 8,
 	.format		= CFG_DISP_SCREEN_RGB_FORMAT,
-#if (1)
 	.buffers	= 8,
-#else
-	.buffers	= 1,
-#endif
 	.with_mm	= CFG_DISP_PRI_RESOL_WIDTH_320_240 * 25 / 72,
 	.height_mm	= CFG_DISP_PRI_RESOL_HEIGHT_320_240 * 25 / 72,
 	.hs_left	= CFG_DISP_PRI_HSYNC_SYNC_WIDTH + CFG_DISP_PRI_HSYNC_BACK_PORCH_320_240,
@@ -171,11 +167,7 @@ static struct fb_plat_data fb0_platdata_480_272 = {
 	.y_res		= CFG_DISP_PRI_RESOL_HEIGHT_480_272,
 	.pixelbit	= CFG_DISP_SCREEN_PIXEL_BYTE * 8,
 	.format		= CFG_DISP_SCREEN_RGB_FORMAT,
-#if (1)
 	.buffers	= 8,
-#else
-	.buffers	= 1,
-#endif
 	.with_mm	= CFG_DISP_PRI_RESOL_WIDTH_480_272 * 25 / 72,
 	.height_mm	= CFG_DISP_PRI_RESOL_HEIGHT_480_272 * 25 / 72,
 	.hs_left	= CFG_DISP_PRI_HSYNC_SYNC_WIDTH + CFG_DISP_PRI_HSYNC_BACK_PORCH_480_272,
@@ -201,11 +193,7 @@ static struct fb_plat_data fb0_platdata_valencia_800_480 = {
 	.y_res		= CFG_DISP_PRI_RESOL_HEIGHT_800_480,
 	.pixelbit	= CFG_DISP_SCREEN_PIXEL_BYTE * 8,
 	.format		= CFG_DISP_SCREEN_RGB_FORMAT,
-#if (1)
 	.buffers	= 8,
-#else
-	.buffers	= 1,
-#endif
 	.with_mm	= CFG_DISP_PRI_RESOL_WIDTH_800_480 * 25 / 72,
 	.height_mm	= CFG_DISP_PRI_RESOL_HEIGHT_800_480 * 25 / 72,
 	.hs_left	= CFG_DISP_PRI_HSYNC_SYNC_WIDTH + CFG_DISP_PRI_HSYNC_BACK_PORCH_VALENCIA_800_480,
@@ -231,11 +219,7 @@ static struct fb_plat_data fb0_platdata_knd_800_480 = {
 	.y_res		= CFG_DISP_PRI_RESOL_HEIGHT_800_480,
 	.pixelbit	= CFG_DISP_SCREEN_PIXEL_BYTE * 8,
 	.format		= CFG_DISP_SCREEN_RGB_FORMAT,
-#if (1)
 	.buffers	= 8,
-#else
-	.buffers	= 1,
-#endif
 	.with_mm	= CFG_DISP_PRI_RESOL_WIDTH_800_480 * 25 / 72,
 	.height_mm	= CFG_DISP_PRI_RESOL_HEIGHT_800_480 * 25 / 72,
 	.hs_left	= 88,
@@ -287,11 +271,7 @@ static struct fb_plat_data fb0_platdata_vtk_800_480 = {
 	.y_res		= CFG_DISP_PRI_RESOL_HEIGHT_800_480,
 	.pixelbit	= CFG_DISP_SCREEN_PIXEL_BYTE * 8,
 	.format		= CFG_DISP_SCREEN_RGB_FORMAT,
-#if (1)
 	.buffers	= 8,
-#else
-	.buffers	= 1,
-#endif
 	.with_mm	= CFG_DISP_PRI_RESOL_WIDTH_800_480 * 25 / 72,
 	.height_mm	= CFG_DISP_PRI_RESOL_HEIGHT_800_480 * 25 / 72,
 	.hs_left	= CFG_DISP_PRI_HSYNC_SYNC_WIDTH + CFG_DISP_PRI_HSYNC_BACK_PORCH_VTK_800_480,
@@ -320,11 +300,7 @@ static struct fb_plat_data fb1_platdata = {
 	.y_res		= CFG_DISP_SEC_RESOL_HEIGHT,
 	.pixelbit	= CFG_DISP_SCREEN_PIXEL_BYTE * 8,
 	.format		= CFG_DISP_SCREEN_RGB_FORMAT,
-#ifdef CONFIG_ANDROID
-	.buffers	= 2,
-#else
-	.buffers	= 1,
-#endif
+	.buffers	= 8,
 };
 
 static struct platform_device fb1_plat_device = {
