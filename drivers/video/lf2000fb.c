@@ -369,22 +369,8 @@ static void fb_init_info(struct fb_info *info)
 
 	priv   = info->par;					/* get fb_private base */
 	bpp    = priv->dpc.pixelbit;
-	x_virt = IS_YUV_LAYER(priv->dpc.layer) ? 4096 : priv->dpc.x_res > priv->dpc.x_virt ? priv->dpc.x_res : priv->dpc.x_virt;
-
-//FIXME: sesters patched for 1024 x 600 screen (Rio demo)
-	switch(get_lcd_size())
-	{
-		case LCD_320_240:
-		case LCD_480_272:
-		case LCD_800_480:
-		case LCD_UNKNOWN:
-			y_virt = IS_YUV_LAYER(priv->dpc.layer) ?  512 : priv->dpc.y_res > priv->dpc.y_virt ? priv->dpc.y_res : priv->dpc.y_virt;
-		break;
-
-		case LCD_1024_600:
-			y_virt = IS_YUV_LAYER(priv->dpc.layer) ? 2048 : 4096; //priv->dpc.y_res > priv->dpc.y_virt ? priv->dpc.y_res : priv->dpc.y_virt;
-		break;
-	}
+	x_virt = priv->dpc.x_res;
+	y_virt = priv->dpc.y_res;
 
 	/* other variable information */
 	info->var.width	    	= priv->dpc.w_mm; 		/* width  mm for dpi */
