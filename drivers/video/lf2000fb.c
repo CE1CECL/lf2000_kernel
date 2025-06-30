@@ -338,7 +338,7 @@ static void fb_init_private(struct fb_info *info, struct fb_plat_data * plat, in
 	dpc->x_res 		= plat->x_res;
 	dpc->y_res 		= plat->y_res;
 	dpc->x_virt		= plat->x_res;
-	dpc->y_virt		= plat->y_res * plat->buffers; // shared between RGB layers
+	dpc->y_virt		= plat->y_res; // shared between RGB layers
 	dpc->pixelbit 	= (layer == 2) ? 8 : plat->pixelbit;
 	dpc->format		= (layer == 2) ? FOURCC_YV12 : NX_MLC_RGBFMT_A8R8G8B8; //plat->format;
 	dpc->offset		= plat->buffers == 1 ? 0 : plat->x_res * plat->y_res * plat->pixelbit / 8;
