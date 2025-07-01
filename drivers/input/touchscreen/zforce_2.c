@@ -703,8 +703,7 @@ static void process_touch(struct zforce *zf, struct touch_info *ti)
 #ifdef ZFORCE_DEBUG
 			dev_info(zf->dev, "DOWN: %u %u %u\n", ti->x, ti->y, ti->id);	
 #endif
-			input_report_abs(zf->input_dev, ABS_MT_TRACKING_ID, ti->id);
-			if(ti->id == 1)
+			if(1)
 			{
 				input_report_key(zf->input_dev, BTN_TOUCH, 1);
 				input_report_abs(zf->input_dev, ABS_PRESSURE, min(100,(zf->pressure_scalar)*(ti->width)));
@@ -714,8 +713,7 @@ static void process_touch(struct zforce *zf, struct touch_info *ti)
 #ifdef ZFORCE_DEBUG
 			dev_info(zf->dev, "UP: %u %u %u\n", ti->x, ti->y, ti->id);	
 #endif
-			input_report_abs(zf->input_dev, ABS_MT_TRACKING_ID, -1);
-			if(ti->id == 1)
+			if(1)
 			{
 				input_report_key(zf->input_dev, BTN_TOUCH, 0);
 				input_report_abs(zf->input_dev, ABS_PRESSURE, 0);
@@ -726,7 +724,7 @@ static void process_touch(struct zforce *zf, struct touch_info *ti)
 #ifdef ZFORCE_DEBUG
 			dev_info(zf->dev, "MOVE: %u %u %u\n", ti->x, ti->y, ti->id);	
 #endif
-			if(ti->id == 1)
+			if(1)
 			{
 				input_report_abs(zf->input_dev, ABS_PRESSURE, min(100,(zf->pressure_scalar)*(ti->width)));
 			}
@@ -735,8 +733,7 @@ static void process_touch(struct zforce *zf, struct touch_info *ti)
 #ifdef ZFORCE_DEBUG
 			dev_info(zf->dev, "INVALID: %u %u %u\n", ti->x, ti->y, ti->id);	
 #endif		
-			input_report_abs(zf->input_dev, ABS_MT_TRACKING_ID, -1);
-			if(ti->id == 1)
+			if(1)
 			{
 				input_report_key(zf->input_dev, BTN_TOUCH, 0);
 				input_report_abs(zf->input_dev, ABS_PRESSURE, 0);
@@ -748,17 +745,12 @@ static void process_touch(struct zforce *zf, struct touch_info *ti)
 			break;
 	}
 
-	if(ti->id == 1) 
+	if(1) 
 	{
 		input_report_abs(zf->input_dev, ABS_X, ti->x);
 		input_report_abs(zf->input_dev, ABS_Y, ti->y);
 	}
 
-	input_report_abs(zf->input_dev, ABS_MT_PRESSURE, min(100,(zf->pressure_scalar)*(ti->width)));
-	input_report_abs(zf->input_dev, ABS_MT_POSITION_X, ti->x);
-	input_report_abs(zf->input_dev, ABS_MT_POSITION_Y, ti->y);
-	input_report_abs(zf->input_dev, ABS_MT_TOUCH_MAJOR, ti->height);
-	input_report_abs(zf->input_dev, ABS_MT_WIDTH_MAJOR, ti->width);
 }
 
 /* Response parser - dispatches to per-type parsers */
@@ -1720,13 +1712,6 @@ int zforce_probe(struct device *dev, unsigned int irq,
 
 
 	/* These are all defined in Documentation/input/multi-touch-protocol.txt */
-	input_set_abs_params(zf->input_dev, ABS_MT_POSITION_X, 0, zf->settings.res.width, 0, 0);
-	input_set_abs_params(zf->input_dev, ABS_MT_POSITION_Y, 0, zf->settings.res.height, 0, 0);
-	input_set_abs_params(zf->input_dev, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
-	input_set_abs_params(zf->input_dev, ABS_MT_WIDTH_MAJOR, 0, 255, 0, 0);
-	input_set_abs_params(zf->input_dev, ABS_MT_PRESSURE, 0, 255, 0, 0);
-	input_set_abs_params(zf->input_dev, ABS_MT_TRACKING_ID, -1, 63, 0, 0);
-	input_set_abs_params(zf->input_dev, ABS_MT_SLOT, 1, 2, 0, 0);
 	input_set_abs_params(zf->input_dev, ABS_X, 0, zf->settings.res.width, 0, 0);
 	input_set_abs_params(zf->input_dev, ABS_Y, 0, zf->settings.res.height, 0, 0);
 	input_set_abs_params(zf->input_dev, ABS_PRESSURE, 0, zf->settings.res.width, 0, 0);
