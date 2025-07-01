@@ -1181,6 +1181,48 @@ int mmc_attach_sdio(struct mmc_host *host)
 		 */
 		if (host->caps & MMC_CAP_POWER_OFF_CARD)
 			pm_runtime_enable(&card->sdio_func[i]->dev);
+	}
+
+	/*
+	 * First add the card to the driver model...
+	 */
+	mmc_release_host(host);
+	err = mmc_add_card(host->card);
+	if (err)
+		goto remove_added;
+
+	/*
+	 * ...then the SDIO functions.
+	 */
+	for (i = 0;i < funcs;i++) {
+		err = sdio_add_func(host->card->sdio_func[i]);
+		if (err)
+			goto remove_added;
+	}
+
+	mmc_claim_host(host);
+	return 0;
+
+
+remove_added:
+	/* Remove without lock if the device has been added. */
+	mmc_sdio_remove(host);
+	mmc_claim_host(host);
+remove:
+	/* And with lock if it hasn't been added. */
+	mmc_release_host(host);
+	if (host->card)
+		mmc_sdio_remove(host);
+	mmc_claim_host(host);
+err:
+	mmc_detach_bus(host);
+
+	pr_err("%s: error %d whilst initialising SDIO card\n",
+		mmc_hostname(host), err);
+
+	return err;
+}
+
 #ifdef CONFIG_BCM4319
 /* From android-2.6.29 */
 int sdio_reset_comm(struct mmc_card *card)
@@ -1263,81 +1305,3 @@ err:
 }
 EXPORT_SYMBOL(sdio_reset_comm);
 #endif /* CONFIG_BCM4319 */
-	}
-
-	/*
-	 * First add the card to the driver model...
-	 */
-	mmc_release_host(host);
-	err = mmc_add_card(host->card);
-	if (err)
-		goto remove_added;
-
-	/*
-	 * ...then the SDIO functions.
-	 */
-	for (i = 0;i < funcs;i++) {
-		err = sdio_add_func(host->card->sdio_func[i]);
-		if (err)
-			goto remove_added;
-	}
-
-	mmc_claim_host(host);
-	return 0;
-
-
-remove_added:
-	/* Remove without lock if the device has been added. */
-	mmc_sdio_remove(host);
-	mmc_claim_host(host);
-remove:
-	/* And with lock if it hasn't been added. */
-	mmc_release_host(host);
-	if (host->card)
-		mmc_sdio_remove(host);
-	mmc_claim_host(host);
-err:
-	mmc_detach_bus(host);
-
-	pr_err("%s: error %d whilst initialising SDIO card\n",
-		mmc_hostname(host), err);
-
-	return err;
-}
-
-int sdio_reset_comm(struct mmc_card *card)
-{
-	struct mmc_host *host = card->host;
-	u32 ocr;
-	int err;
-
-	printk("%s():\n", __func__);
-	mmc_claim_host(host);
-
-	mmc_go_idle(host);
-
-	mmc_set_clock(host, host->f_min);
-
-	err = mmc_send_io_op_cond(host, 0, &ocr);
-	if (err)
-		goto err;
-
-	host->ocr = mmc_select_voltage(host, ocr);
-	if (!host->ocr) {
-		err = -EINVAL;
-		goto err;
-	}
-
-	err = mmc_sdio_init_card(host, host->ocr, card, 0);
-	if (err)
-		goto err;
-
-	mmc_release_host(host);
-	return 0;
-err:
-	printk("%s: Error resetting SDIO communications (%d)\n",
-	       mmc_hostname(host), err);
-	mmc_release_host(host);
-	return err;
-}
-EXPORT_SYMBOL(sdio_reset_comm);
