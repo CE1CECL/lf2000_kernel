@@ -1183,16 +1183,10 @@ void soc_dpc_init(void)
 			dpc->wait_time, pck, hfp, xres, hbp+hsw, vfp, yres, vbp+vsw);
 	}
 
-#if defined(CONFIG_PLAT_NXP3200_M2K) || \
-	defined(CONFIG_PLAT_NXP3200_L2K) || \
-	defined(CONFIG_PLAT_NXP3200_VALENCIA_CIP) || \
-	defined(CONFIG_PLAT_NXP3200_FAVELA) || \
-	defined(CONFIG_PLAT_NXP3200_RIO)
 	/* init LCD via SPI */
 	spi_lcd_init();
 	spi_lcd_setup();
 	soc_dpc_set_layer_enable(0, CFG_DISP_LAYER_SCREEN, 1);
-#endif
 }
 
 void soc_dpc_exit(void)
