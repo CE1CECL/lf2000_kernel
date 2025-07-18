@@ -2217,14 +2217,10 @@ static void s3c_hsotg_update_connected_state(unsigned long data)
 	if(!hsotg->conn_state)
 	{
 		s3c_hsotg_disconnect_irq(hsotg);
-		input_report_switch(hsotg->input, SW_LID, hsotg->conn_state);
-		input_sync(hsotg->input);
 	}
 	else if (!(detect_usb_charger()))
 	{
 		dev_info(hsotg->dev, "Definitely USB, report input event\n");
-		input_report_switch(hsotg->input, SW_LID, hsotg->conn_state);
-		input_sync(hsotg->input);
 	}
 	else
 	{
