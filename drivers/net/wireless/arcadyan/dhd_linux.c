@@ -317,8 +317,16 @@ typedef struct dhd_info {
  * example nvram_path[MOD_PARAM_PATHLEN]="/projects/wlan/nvram.txt"
  */
 // davidychang
+#if CONFIG_NXP3200_SURGEON
+char firmware_path[MOD_PARAM_PATHLEN]="/lib/firmware/arcadyan/bcm4319.bin";
+char nvram_path[MOD_PARAM_PATHLEN]="/lib/firmware/arcadyan/nvram.fw";
+#elif CONFIG_ARCH_NXP3200
+char firmware_path[MOD_PARAM_PATHLEN]="/system/lib/firmware/arcadyan/bcm4319.bin";
+char nvram_path[MOD_PARAM_PATHLEN]="/system/lib/firmware/arcadyan/nvram.fw";
+#else
 char firmware_path[MOD_PARAM_PATHLEN];  // ="bcm4319.bin";
 char nvram_path[MOD_PARAM_PATHLEN];  // ="nvram.txt";
+#endif
 
 
 #if !defined(CONFIG_HAS_EARLYSUSPEND)
@@ -343,7 +351,11 @@ uint dhd_sysioc = TRUE;
 module_param(dhd_sysioc, uint, 0);
 
 /* Watchdog interval */
+#ifdef CONFIG_ARCH_NXP3200
+uint dhd_watchdog_ms = 100;
+#else
 uint dhd_watchdog_ms = 10;
+#endif
 module_param(dhd_watchdog_ms, uint, 0);
 
 #ifdef DHD_DEBUG
@@ -391,7 +403,11 @@ uint dhd_roam = 0;
 uint dhd_radio_up = 1;
 
 /* Network inteface name */
+#ifdef CONFIG_ARCH_NXP3200
+char iface_name[IFNAMSIZ]="wlan0";
+#else
 char iface_name[IFNAMSIZ];
+#endif
 module_param_string(iface_name, iface_name, IFNAMSIZ, 0);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0))
@@ -2068,6 +2084,15 @@ dhd_attach(osl_t *osh, struct dhd_bus *bus, uint bus_hdrlen)
 	/* updates firmware nvram path if it was provided as module parameters */
 	if ((firmware_path != NULL) && (firmware_path[0] != '\0'))
 		strcpy(fw_path, firmware_path);
+//Harry
+	else
+	{
+		printf("[harry] Warning : firmware_path=NULL\n");
+		strcpy(fw_path, "./bcm4319.bin");
+		printf("[harry] Change fw_path to ./bcm4319.bin\n");
+
+	}	
+//Harry 
 
 	if ((nvram_path != NULL) && (nvram_path[0] != '\0'))
 		strcpy(nv_path, nvram_path);
@@ -2075,8 +2100,8 @@ dhd_attach(osl_t *osh, struct dhd_bus *bus, uint bus_hdrlen)
 	else
 	{
 		printf("[harry] Warning : nvram_path=NULL\n");
-		strcpy(nv_path, "./nvram.txt");
-		printf("[harry] Change nv_path to ./nvram.txt\n");
+		strcpy(nv_path, "./nvram.fw");
+		printf("[harry] Change nv_path to ./nvram.fw\n");
 
 	}	
 //Harry 
