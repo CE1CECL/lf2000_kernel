@@ -1626,14 +1626,9 @@ int zforce_probe(struct device *dev, unsigned int irq,
 	// If BootComplete wasn't received in 100 ms, reset the controller
 	// and try one more time. If BootComplete is still not received, 
 	// print error message, do the clean-up and return from probe.
-	for(i = 0; i <= 2; i++)
+	for(i = 0; i <= 1; i++)
 	{
-		if(i == 2) goto out_bootfail;
-		if(i == 1)
-		{
-			dev_info(zf->dev, "Resetting Zforce controller because BootComplete wasn't received \n");
-			zforce_reset();
-		}
+		if(i == 1) goto out_bootfail;
 		
 		for(counter = 0; counter < ZFORCE_WAIT_BOOTCOMPLETE; counter++)
 		{
