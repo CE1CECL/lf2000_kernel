@@ -369,8 +369,8 @@ static void fb_init_info(struct fb_info *info)
 
 	priv   = info->par;					/* get fb_private base */
 	bpp    = priv->dpc.pixelbit;
-	x_virt = priv->dpc.x_res;
-	y_virt = priv->dpc.y_res;
+	x_virt = priv->dpc.x_virt;
+	y_virt = priv->dpc.y_virt;
 
 	/* other variable information */
 	info->var.width	    	= priv->dpc.w_mm; 		/* width  mm for dpi */
