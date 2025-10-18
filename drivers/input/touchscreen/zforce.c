@@ -1027,26 +1027,6 @@ static int zforce_select_irq(struct zforce *zf)
 		case LF2000_BOARD_RIO_FEP_800_327P666:
 			zf->irq_line = TP_INT;
 			break;
-		case LF2000_BOARD_LUCY:
-		case LF2000_BOARD_LUCY_PP:
-		case LF2000_BOARD_LUCY_CIP:
-		case LF2000_BOARD_VALENCIA:
-		case LF2000_BOARD_VALENCIA_EP:
-		case LF2000_BOARD_VALENCIA_EP_8:
-		case LF2000_BOARD_VALENCIA_FEP:
-		case LF2000_BOARD_VALENCIA_FEP_8:
-		case LF2000_BOARD_VALENCIA_EP_800_480:
-		case LF2000_BOARD_VALENCIA_EP_800_480_8:
-		case LF2000_BOARD_VALENCIA_FEP_800_480:
-		case LF2000_BOARD_VALENCIA_FEP_800_480_8:
-		case LF2000_BOARD_VALENCIA_KND_800_480:
-		case LF2000_BOARD_VALENCIA_KND_800_480_8:
-		case LF2000_BOARD_VALENCIA_KND_1024_600:
-		case LF2000_BOARD_VALENCIA_KND_1024_600_8:
-		case LF2000_BOARD_VALENCIA_CIP:
-		case LF2000_BOARD_VTK:
-			zf->irq_line = (int)(zf->dev->platform_data);
-			break;
  		default:
 			printk(KERN_ERR "%s: Invalid Board Revision 0x%X \n", 
 				__func__, system_rev);
