@@ -974,13 +974,13 @@ static irqreturn_t zforce_isr(int irq, void *priv)
 	if(unlikely(0 != ret))
 	{
 		dev_warn(zf->dev, "Failed read\n");
-		goto out;
+		return IRQ_NONE;
 	}
 
 	if(unlikely(ZFORCE_FRAME_START != recv[0]))
 	{
 		dev_warn(zf->dev, "Bad packet: %#hhx\n", recv[0]);
-		goto out;
+		return IRQ_NONE;
 	}
 	else
 	{
