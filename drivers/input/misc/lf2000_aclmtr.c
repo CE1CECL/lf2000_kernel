@@ -699,7 +699,7 @@ static int lf1000_aclmtr_probe(struct platform_device *pdev)
 	input_dev->id.version = 0x0001;
 	lf1000_aclmtr_dev->input = input_dev;
 
-	lf1000_aclmtr_dev->do_enable = 0;
+	lf1000_aclmtr_dev->do_enable = 1;
 	lf1000_aclmtr_dev->do_orient = 0;
 	lf1000_aclmtr_dev->do_tick = 0;
 	lf1000_aclmtr_dev->rate = INPUT_SAMPLING_HZ;
