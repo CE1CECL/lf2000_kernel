@@ -80,19 +80,19 @@
 /*------------------------------------------------------------------------------
  *   DMA zone
  */
-#define	CFG_MEM_PHY_DMAZONE_SIZE 		(8<<20)		/* 8MB DMA zone */
+#undef CFG_MEM_PHY_DMAZONE_SIZE			/* DMA shared with contiguous linear region below */
 
 
 /*------------------------------------------------------------------------------
  * 	 Reserved memory map
  */
-#define	CFG_MEM_VIR_LINEAR_BASE			0xE0000000	/* OGL heap */
-#define	CFG_MEM_PHY_LINEAR_BASE			(CFG_MEM_PHY_SYSTEM_BASE + CFG_MEM_PHY_SYSTEM_SIZE + CFG_MEM_PHY_DMAZONE_SIZE)	/* System / DMA */
-#define	CFG_MEM_PHY_LINEAR_SIZE			(64<<20)	/* 64MB */
+#define	CFG_MEM_VIR_LINEAR_BASE			(CFG_MEM_VIR_SYSTEM_BASE + CFG_MEM_PHY_SYSTEM_SIZE)	/* System / DMA */
+#define	CFG_MEM_PHY_LINEAR_BASE			(CFG_MEM_PHY_SYSTEM_BASE + CFG_MEM_PHY_SYSTEM_SIZE)	/* System / DMA */
+#define	CFG_MEM_PHY_LINEAR_SIZE			(48<<20)	/* 48MB */
 
 #define	CFG_MEM_VIR_BLOCK_BASE			(CFG_MEM_VIR_LINEAR_BASE + CFG_MEM_PHY_LINEAR_SIZE)	/* For video */
 #define	CFG_MEM_PHY_BLOCK_BASE			(CFG_MEM_PHY_LINEAR_BASE + CFG_MEM_PHY_LINEAR_SIZE)	/* For video */
-#define	CFG_MEM_PHY_BLOCK_SIZE			(24<<20)	/* 24MB */
+#define	CFG_MEM_PHY_BLOCK_SIZE			(8<<20)		/* 8MB */
 
 /*------------------------------------------------------------------------------
  * 	NOTE> Linux kernel memory map
