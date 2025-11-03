@@ -70,8 +70,6 @@
 #define	CFG_KERNEL_TEXT_BASE			0x80200000
 #define	CFG_SLEEP_DATA_BASE 			0x80200000	/* max 256 byte */
 
-#if defined(CONFIG_PLAT_NXP3200_RIO)
-
 /*------------------------------------------------------------------------------
  * 	 System memory map
  */
@@ -82,7 +80,7 @@
 /*------------------------------------------------------------------------------
  *   DMA zone
  */
-#define	CFG_MEM_PHY_DMAZONE_SIZE 		(4<<20)		/* 4MB DMA zone */
+#define	CFG_MEM_PHY_DMAZONE_SIZE 		(8<<20)		/* 8MB DMA zone */
 
 
 /*------------------------------------------------------------------------------
@@ -95,58 +93,6 @@
 #define	CFG_MEM_VIR_BLOCK_BASE			(CFG_MEM_VIR_LINEAR_BASE + CFG_MEM_PHY_LINEAR_SIZE)	/* For video */
 #define	CFG_MEM_PHY_BLOCK_BASE			(CFG_MEM_PHY_LINEAR_BASE + CFG_MEM_PHY_LINEAR_SIZE)	/* For video */
 #define	CFG_MEM_PHY_BLOCK_SIZE			(24<<20)	/* 24MB */
-
-#elif defined(CONFIG_PLAT_NXP3200_L2K) || defined(CONFIG_PLAT_NXP3200_M2K) || defined(CONFIG_PLAT_NXP3200_VALENCIA_CIP)
-
-/*------------------------------------------------------------------------------
- * 	 System memory map
- */
-#define	CFG_MEM_VIR_SYSTEM_BASE			0x80200000	/* System, must be at an evne 2MB boundary (head.S) */
-#define	CFG_MEM_PHY_SYSTEM_BASE			0x80200000	/* System, must be at an evne 2MB boundary (head.S) */
-#define	CFG_MEM_PHY_SYSTEM_SIZE			(62<<20)	/* 62MB */
-
-/*------------------------------------------------------------------------------
- *   DMA zone
- */
-#define	CFG_MEM_PHY_DMAZONE_SIZE 		(8<<20)		/* 8MB DMA zone */
-
-/*------------------------------------------------------------------------------
- * 	 Reserved memory map
- */
-#define	CFG_MEM_VIR_LINEAR_BASE			0xE0000000	/* System / DMA */
-#define	CFG_MEM_PHY_LINEAR_BASE			(CFG_MEM_PHY_SYSTEM_BASE + CFG_MEM_PHY_SYSTEM_SIZE + CFG_MEM_PHY_DMAZONE_SIZE)	/* System / DMA */
-#define	CFG_MEM_PHY_LINEAR_SIZE			(48<<20)	/* 48MB */
-
-#define	CFG_MEM_VIR_BLOCK_BASE			(CFG_MEM_VIR_LINEAR_BASE + CFG_MEM_PHY_LINEAR_SIZE)	/* For video */
-#define	CFG_MEM_PHY_BLOCK_BASE			(CFG_MEM_PHY_LINEAR_BASE + CFG_MEM_PHY_LINEAR_SIZE)	/* For video */
-#define	CFG_MEM_PHY_BLOCK_SIZE			(8<<20)		/* 8MB */
-
-#else /* L2K, M2K, etc */
-
-/*------------------------------------------------------------------------------
- * 	 System memory map
- */
-#define	CFG_MEM_VIR_SYSTEM_BASE			0x80200000	/* System, must be at an evne 2MB boundary (head.S) */
-#define	CFG_MEM_PHY_SYSTEM_BASE			0x80200000	/* System, must be at an evne 2MB boundary (head.S) */
-#define	CFG_MEM_PHY_SYSTEM_SIZE			(62<<20)	/* 62MB */
-
-/*------------------------------------------------------------------------------
- *   DMA zone
- */
-#undef CFG_MEM_PHY_DMAZONE_SIZE			/* DMA shared with contiguous linear region below */
-
-/*------------------------------------------------------------------------------
- * 	 Reserved memory map
- */
-#define	CFG_MEM_VIR_LINEAR_BASE			(CFG_MEM_VIR_SYSTEM_BASE + CFG_MEM_PHY_SYSTEM_SIZE)	/* System / DMA */
-#define	CFG_MEM_PHY_LINEAR_BASE			(CFG_MEM_PHY_SYSTEM_BASE + CFG_MEM_PHY_SYSTEM_SIZE)	/* System / DMA */
-#define	CFG_MEM_PHY_LINEAR_SIZE			(48<<20)	/* 48MB */
-
-#define	CFG_MEM_VIR_BLOCK_BASE			0xE0000000	/* For video */
-#define	CFG_MEM_PHY_BLOCK_BASE			(CFG_MEM_PHY_LINEAR_BASE + CFG_MEM_PHY_LINEAR_SIZE)	/* For video */
-#define	CFG_MEM_PHY_BLOCK_SIZE			(16<<20)	/* 16MB */
-
-#endif
 
 /*------------------------------------------------------------------------------
  * 	NOTE> Linux kernel memory map

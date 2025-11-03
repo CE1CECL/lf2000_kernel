@@ -1537,39 +1537,6 @@ void lf2000_gpio_init_map(void)
 			printk(KERN_ERR "%s GPIO mapping does not support " \
 				"Board Revision = 0x%X\n",
 				__func__, system_rev);
-#if   defined(CONFIG_PLAT_NXP3200_L2K) | \
-      defined(CONFIG_PLAT_NXP3200_BID)
-			printk(KERN_WARNING "defaulting to Lucy GPIO mapping\n");
-			init_lucy();
-
-#elif defined(CONFIG_PLAT_NXP3200_FAVELA) || \
-      defined(CONFIG_PLAT_NXP3200_VALENCIA) || \
-      defined(CONFIG_PLAT_NXP3200_M2K)
-			printk(KERN_WARNING "defaulting to VALENCIA GPIO mapping\n");
-			init_valencia();
-
-#elif defined(CONFIG_PLAT_NXP3200_RIO)
-			printk(KERN_WARNING "defaulting to Rio GPIO mapping\n");
-			init_rio();
-
-#elif defined(CONFIG_PLAT_NXP3200_RIO_BETA)
-			printk(KERN_WARNING "defaulting to Rio Beta GPIO mapping\n");
-			init_rio_beta();
-
-#elif defined(CONFIG_PLAT_NXP3200_RIO_EP)
-			printk(KERN_WARNING "defaulting to Rio Beta GPIO mapping\n");
-			init_rio_ep();
-
-#elif defined(CONFIG_PLAT_NXP3200_VALENCIA_CIP)
-			printk(KERN_WARNING "defaulting to VALENCIA CIP GPIO mapping\n");
-			init_valencia_cip();
-
-#elif defined(CONFIG_PLAT_NXP3200_VTK)
-			printk(KERN_WARNING "defaulting to VTK GPIO mapping\n");
-			init_vtk();
-#else
-#error CONFIG_PLAT not set
-#endif
 			break;
 	}
 	lf2000_gpio_map_valid = 1;	/* initialized gpio_map[] */

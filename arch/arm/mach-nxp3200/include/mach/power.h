@@ -1,39 +1,6 @@
 #ifndef _LF1000_POWER_H_
 #define _LF1000_POWER_H_
 
-#if defined(CONFIG_PLAT_NXP3200_RIO)
-/* default values */
-/* SP 04-16-13: If you are changing low battery threshold here, 
- * make sure you also change it in these two files to maintain it 
- * across boot, kernel and battery voltage logging.
- * Battery logger - LinuxDist_LF2000/packages/optimization/bat-logger.sh
- * Boot - nxp3200_bsp/bootloader/u-boot-2010.06/board/nxp3200/common/board.c
- */
-#define MAX_BATTERY_MV	4400		/* max expected battery value	*/
-#define LOW_BATTERY_MV	3600		/* low battery			*/
-#define LOW_BATTERY_REPEAT_MV 25	/* repeat every 100mv drop	*/
-
-/* Hysteresis low to normal Battery */
-#define NORMAL_BATTERY_MV   (LOW_BATTERY_MV + 200)
-
-#else
-/* default values */
-#define MAX_BATTERY_MV	8000		/* max expected battery value	*/
-#define LOW_BATTERY_MV	4200		/* low battery			*/
-#define LOW_BATTERY_REPEAT_MV 100	/* repeat every 100mv drop	*/
-
-/* Hysteresis low to normal Battery */
-#define NORMAL_BATTERY_MV   (LOW_BATTERY_MV + 400)
-
-#endif // Rio or non-Rio
-
-/*
- * Lower critical battery level below hardware shutoff,
- * allowing play until you die.  Can still adjust level via
- * /sys/devices/platform/lf1000-power/critical_battery_mv interface
- */
-#define CRITICAL_BATTERY_MV 2000	/* critical low battery		*/
-
 enum lf1000_power_status {
 	LF1000_UNKNOWN 		= 0,
 	EXTERNAL		= 1,	/* on external power */

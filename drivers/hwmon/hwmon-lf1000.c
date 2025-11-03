@@ -952,12 +952,20 @@ static int lf1000_power_probe(struct platform_device *pdev)
 	}
 
 	/* set initial battery thresholds */
-	priv->max_battery_mv      = MAX_BATTERY_MV;
-	priv->normal_battery_mv   = NORMAL_BATTERY_MV;
-	priv->low_battery_mv      = LOW_BATTERY_MV;
-	priv->low_battery_repeat_mv = LOW_BATTERY_REPEAT_MV;
-	priv->low_battery_mv      = LOW_BATTERY_MV;
-	priv->critical_battery_mv = CRITICAL_BATTERY_MV;
+if (get_leapfrog_platform() == RIO) {
+	priv->max_battery_mv      = 4400; // MAX_BATTERY_MV
+	priv->normal_battery_mv   = (3600 + 200); // NORMAL_BATTERY_MV
+	priv->low_battery_mv      = 3600; // LOW_BATTERY_MV 
+	priv->low_battery_repeat_mv = 25; // LOW_BATTERY_REPEAT_MV
+	priv->low_battery_mv      = 3600; // LOW_BATTERY_MV
+} else {
+	priv->max_battery_mv      = 8000; // MAX_BATTERY_MV
+	priv->normal_battery_mv   = (4200 + 400); // NORMAL_BATTERY_MV
+	priv->low_battery_mv      = 4200; // LOW_BATTERY_MV 
+	priv->low_battery_repeat_mv = 100; // LOW_BATTERY_REPEAT_MV
+	priv->low_battery_mv      = 4200; // LOW_BATTERY_MV
+}
+	priv->critical_battery_mv = 2000; // CRITICAL_BATTERY_MV;
 
 	if (gpio_have_gpio_dev()) {
 		priv->adc_slope_256 = ADC_SLOPE_256_ME_LF1000;
@@ -978,7 +986,11 @@ static int lf1000_power_probe(struct platform_device *pdev)
 
 	/* grab initial battery setting */
 	hwmon_dev->supply_mv = lf1000_get_battery_mv(priv);
-	priv->low_battery_reported_mv = LOW_BATTERY_MV;
+if (get_leapfrog_platform() == RIO) {
+	priv->low_battery_reported_mv = 3600; // LOW_BATTERY_MV
+} else {
+	priv->low_battery_reported_mv = 4200; // LOW_BATTERY_MV
+}
 	if(priv->supply_mv < 0) {
 		dev_err(&pdev->dev, "%s.%d: initial battery read failed\n",
 			__FUNCTION__, __LINE__);

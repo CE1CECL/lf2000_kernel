@@ -47,13 +47,13 @@
 #include <linux/sysfs.h>
 #endif
 
-#if defined(CONFIG_PLAT_NXP3200_RIO)
+#if 1 // defined(CONFIG_PLAT_NXP3200_RIO)
 #define FLIP(x)		(x | 0x03)
 #else
 #define FLIP(x)		(x)
 #endif
 
-#if defined(CONFIG_PLAT_NXP3200_VALENCIA_CIP) || defined(CONFIG_PLAT_NXP3200_RIO)
+#if 1 // defined(CONFIG_PLAT_NXP3200_VALENCIA_CIP) || defined(CONFIG_PLAT_NXP3200_RIO)
 #define PLLX(x)		(x | 0x02)
 #else
 #define PLLX(x)		(x | 0x03)
@@ -1452,13 +1452,11 @@ static int hynix_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *p)
 	else
 		set = 0x04, clear = 0x00;
 
-#if defined(CONFIG_PLAT_NXP3200_RIO)
 	/* apply x/y flip, per platform mounting */
 	if (strstr(priv->info->name, "front"))
 		clear |= FLIP(clear);
 	else
 		set |= FLIP(set);
-#endif
 
 	if(0 != (ret = hynix_rmw(client, WINDOW_PAGE, VDOCTL2, set, clear)))
 		goto out;

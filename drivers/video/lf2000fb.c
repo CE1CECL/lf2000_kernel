@@ -55,11 +55,6 @@
 #include <linux/lf1000/lf1000fb.h>
 #endif
 
-#include <asm/system_info.h>
-static inline bool is_rio(int sysid) {
-    return (sysid >= 0x320);
-}
-
 #if (0)
 #define DBGOUT(msg...)		{ printk(KERN_INFO "fb: " msg); }
 #else
@@ -261,7 +256,13 @@ static int fb_alloc_memory(struct fb_info *info)
 
 	/* allocate from system memory */
 	priv->length = PAGE_ALIGN(length);
-if (is_rio(system_rev)) {
+if (get_leapfrog_platform() != RIO) {
+	priv->vbase  = dma_alloc_writecombine(
+						priv->device,
+						priv->length,
+						&priv->pbase,
+						GFP_KERNEL);
+} else {
 	/* max vmem block alloc = 16MB block (4K x 4K) */
 	for (size = min(length, (4096 << 12)); size > 0 ; length -= size, size = length)
 	{
@@ -285,12 +286,6 @@ if (is_rio(system_rev)) {
 		priv->pbase = vm.Address & ~0x20000000UL;
 		priv->vbase = (void*)vm.Virtual;
 	}
-} else {
-	priv->vbase  = dma_alloc_writecombine(
-						priv->device,
-						priv->length,
-						&priv->pbase,
-						GFP_KERNEL);
 }
 
 	if(priv->vbase) {
@@ -1004,18 +999,6 @@ static int lf1000fb_ioctl(struct fb_info *info, unsigned int cmd,
 			if (copy_to_user(argp, (void *)&c, sizeof(struct lf1000fb_vidscale_cmd)))
 				return -EFAULT;
 			break;
-/*
-		case FBIOGET_VBLANK:
-			{
-			struct fb_vblank vblank;
-			memset(&vblank, 0, sizeof(vblank));
-			vblank.flags = FB_VBLANK_HAVE_COUNT;
-			vblank.count = soc_dpc_get_vblank(priv->dpc.module);
-			if (copy_to_user(argp, (void *)&vblank, sizeof(struct fb_vblank)))
-				return -EFAULT;
-			}
-			break;
-*/
 		default:
 			return -ENOIOCTLCMD;
 	}

@@ -25,6 +25,7 @@
 #include <mach/cfg_gpio.h>
 #include <mach/cfg_main.h>
 #include <mach/cfg_mem.h>
+#include <mach/platform_id.h>
 #endif
 
 #include "nxp3200.h"
