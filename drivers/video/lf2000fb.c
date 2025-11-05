@@ -256,37 +256,11 @@ static int fb_alloc_memory(struct fb_info *info)
 
 	/* allocate from system memory */
 	priv->length = PAGE_ALIGN(length);
-if (get_leapfrog_platform() != RIO) {
 	priv->vbase  = dma_alloc_writecombine(
 						priv->device,
 						priv->length,
 						&priv->pbase,
 						GFP_KERNEL);
-} else {
-	/* max vmem block alloc = 16MB block (4K x 4K) */
-	for (size = min(length, (4096 << 12)); size > 0 ; length -= size, size = length)
-	{
-		int ret;
-		VM_IMEMORY vm;
-		int vmem_alloc(VM_IMEMORY *pmem, int minor, void *listhead);
-
-		memset(&vm, 0, sizeof(vm));
-		vm.MemWidth = 4096;
-		vm.MemHeight = size / 4096;
-		vm.Flags = VMEM_BLOCK_BUFFER;
-		vm.HorAlign = 1;
-		vm.VerAlign = 1;
-		ret = vmem_alloc(&vm, 0, NULL);
-
-		printk(KERN_INFO "%s: vmem ret=%d, phys=%08x, virt=%08x\n", __func__, ret, vm.Address, vm.Virtual);
-
-		if (priv->pbase)
-			continue;
-
-		priv->pbase = vm.Address & ~0x20000000UL;
-		priv->vbase = (void*)vm.Virtual;
-	}
-}
 
 	if(priv->vbase) {
 		/* leave bootloader framebuffer memory alone (no memset) */
