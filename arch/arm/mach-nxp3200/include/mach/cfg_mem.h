@@ -73,9 +73,9 @@
 /*------------------------------------------------------------------------------
  * 	 System memory map
  */
-#define	CFG_MEM_VIR_SYSTEM_BASE			0x80200000	/* System, must be at an evne 2MB boundary (head.S) */
+#undef	CFG_MEM_VIR_SYSTEM_BASE			/* System, must be at an evne 2MB boundary (head.S) */
 #define	CFG_MEM_PHY_SYSTEM_BASE			0x80200000	/* System, must be at an evne 2MB boundary (head.S) */
-#define	CFG_MEM_PHY_SYSTEM_SIZE			(162<<20)	/* 34MB + 128MB */
+#undef	CFG_MEM_PHY_SYSTEM_SIZE
 
 /*------------------------------------------------------------------------------
  *   DMA zone
@@ -86,13 +86,7 @@
 /*------------------------------------------------------------------------------
  * 	 Reserved memory map
  */
-#define	CFG_MEM_VIR_LINEAR_BASE			(CFG_MEM_VIR_SYSTEM_BASE + CFG_MEM_PHY_SYSTEM_SIZE)	/* System / DMA */
-#define	CFG_MEM_PHY_LINEAR_BASE			(CFG_MEM_PHY_SYSTEM_BASE + CFG_MEM_PHY_SYSTEM_SIZE)	/* System / DMA */
-#define	CFG_MEM_PHY_LINEAR_SIZE			(48<<20)	/* 48MB */
-
-#define	CFG_MEM_VIR_BLOCK_BASE			(CFG_MEM_VIR_LINEAR_BASE + CFG_MEM_PHY_LINEAR_SIZE)	/* For video */
-#define	CFG_MEM_PHY_BLOCK_BASE			(CFG_MEM_PHY_LINEAR_BASE + CFG_MEM_PHY_LINEAR_SIZE)	/* For video */
-#define	CFG_MEM_PHY_BLOCK_SIZE			(8<<20)		/* 8MB */
+#define	CFG_MEM_PHY_LINEAR_SIZE			(4<<20)		/* 4MB */
 
 /*------------------------------------------------------------------------------
  * 	NOTE> Linux kernel memory map

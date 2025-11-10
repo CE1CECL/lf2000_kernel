@@ -70,25 +70,9 @@ struct PART_INFO {
 	unsigned int length;
 };
 
-static struct PART_INFO __n1d_parts[] = {
-#if (0 == MEM_DMAZONE_EQ_LINEAR)
-	{
-		.phybase = CFG_MEM_PHY_LINEAR_BASE,
-		.virbase = CFG_MEM_VIR_LINEAR_BASE,
-		.length  = CFG_MEM_PHY_LINEAR_SIZE,
-	},
-#endif
-};
+static struct PART_INFO __n1d_parts[] = { };
 
-static struct PART_INFO __n2d_parts[] = {
-#if defined(CFG_MEM_PHY_BLOCK_BASE)
-	{
-		.phybase = CFG_MEM_PHY_BLOCK_BASE,
-		.virbase = CFG_MEM_VIR_BLOCK_BASE,
-		.length  = CFG_MEM_PHY_BLOCK_SIZE,
-	},
-#endif
-};
+static struct PART_INFO __n2d_parts[] = { };
 
 #define NUM_OF_1D_PARTS		(sizeof(__n1d_parts)/sizeof(__n1d_parts[0]))	/* total partition number */
 #define NUM_OF_2D_PARTS		(sizeof(__n2d_parts)/sizeof(__n2d_parts[0]))	/* total partition number */
