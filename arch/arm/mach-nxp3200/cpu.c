@@ -78,7 +78,7 @@ static void __init cpu_fixup(
   if ((system_rev >= 0x0320) && (system_rev <= 0x032d)) {
     mi->bank[0].size	= 0xfe00000;
   } else {
-    mi->bank[0].size	= 0xae00000;
+    mi->bank[0].size	= 0x7e00000;
   }
 
     #if KERNEL_VERSION(2,6,35) > LINUX_VERSION_CODE
