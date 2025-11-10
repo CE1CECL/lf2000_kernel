@@ -23,6 +23,7 @@
 #include <linux/platform_device.h>
 #include <linux/dma-mapping.h>
 
+#include <asm/system_info.h>
 #include <asm/setup.h>
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -74,7 +75,11 @@ static void __init cpu_fixup(
 	 */
     mi->nr_banks     	= 1;
 	mi->bank[0].start 	= CFG_MEM_PHY_SYSTEM_BASE;
-    mi->bank[0].size	= 0x7e00000;
+  if ((system_rev >= 0x0320) && (system_rev <= 0x032d)) {
+    mi->bank[0].size	= 0xfe00000;
+  } else {
+    mi->bank[0].size	= 0xae00000;
+  }
 
     #if KERNEL_VERSION(2,6,35) > LINUX_VERSION_CODE
     mi->bank[0].node  	= 0;
