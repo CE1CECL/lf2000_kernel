@@ -40,6 +40,7 @@
 	 */
 /* FIXME */
 #include <../../../arch/arm/mach-nxp3200/board_revisions.h>
+#include <mach/platform_id.h>
 
 static void lf2k_gpio_configure_pin(enum gpio_resource gpio, 
 									uint pinfunc,
