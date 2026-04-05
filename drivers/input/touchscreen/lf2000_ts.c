@@ -2133,6 +2133,98 @@ static int lf2000_ts2_probe(struct platform_device *pdev)
 	iraw_dev->id.version	= 0x0001;
 	t_dev->iraw_dev			= iraw_dev;
 
+	/* Use different values based on the platform */
+	if( get_leapfrog_platform() == LUCY )
+	{
+		t_dev->adc_max_tnt_down  = MAX_TNT_DOWN_LUCY;
+		t_dev->adc_min_tnt_up    = MIN_TNT_UP_LUCY;
+		
+		t_dev->delay_in_us	= TS_DELAY_IN_US_LUCY;
+		t_dev->y_delay_in_us	= TS_Y_DELAY_IN_US_LUCY;
+		t_dev->tnt_delay_in_us	= TNT_DELAY_IN_US_LUCY;
+		
+		/* set default /etc/pointercal values */
+		t_dev->a[0] = TS_A0_LUCY;
+		t_dev->a[1] = TS_A1_LUCY;
+		t_dev->a[2] = TS_A2_LUCY;
+		t_dev->a[3] = TS_A3_LUCY;
+		t_dev->a[4] = TS_A4_LUCY;
+		t_dev->a[5] = TS_A5_LUCY;
+		t_dev->a[6] = TS_A6_LUCY;
+		
+		t_dev->pressure_curve[0] = 303;
+		t_dev->pressure_curve[1] = 405;
+		t_dev->pressure_curve[2] = 428;
+		t_dev->pressure_curve[3] = 505;
+		t_dev->pressure_curve[4] = 603;
+		t_dev->pressure_curve[5] = 632;
+		t_dev->pressure_curve[6] = 651;
+		t_dev->pressure_curve[7] = 670;
+		t_dev->pressure_curve[8] = 733;
+		
+		t_dev->adc_max_delta_tnt = MAX_DELTA_TNT_LUCY;
+	}
+	else if( get_leapfrog_platform() == VALENCIA )
+	{
+		t_dev->adc_max_tnt_down  = MAX_TNT_DOWN_VALENCIA;
+		t_dev->adc_min_tnt_up    = MIN_TNT_UP_VALENCIA;
+		
+		t_dev->delay_in_us	= TS_DELAY_IN_US_VALENCIA;
+		t_dev->y_delay_in_us	= TS_Y_DELAY_IN_US_VALENCIA;
+		t_dev->tnt_delay_in_us	= TNT_DELAY_IN_US_VALENCIA;
+		
+		/* set default /etc/pointercal values */
+		t_dev->a[0] = TS_A0_VALENCIA;
+		t_dev->a[1] = TS_A1_VALENCIA;
+		t_dev->a[2] = TS_A2_VALENCIA;
+		t_dev->a[3] = TS_A3_VALENCIA;
+		t_dev->a[4] = TS_A4_VALENCIA;
+		t_dev->a[5] = TS_A5_VALENCIA;
+		t_dev->a[6] = TS_A6_VALENCIA;
+		
+		t_dev->pressure_curve[0] = 468;
+		t_dev->pressure_curve[1] = 471;
+		t_dev->pressure_curve[2] = 487;
+		t_dev->pressure_curve[3] = 495;
+		t_dev->pressure_curve[4] = 509;
+		t_dev->pressure_curve[5] = 524;
+		t_dev->pressure_curve[6] = 553;
+		t_dev->pressure_curve[7] = 575;
+		t_dev->pressure_curve[8] = 612;
+		
+		t_dev->adc_max_delta_tnt = MAX_DELTA_TNT_VALENCIA;
+	}
+	else
+	{
+		t_dev->adc_max_tnt_down  = MAX_TNT_DOWN;
+		t_dev->adc_min_tnt_up    = MIN_TNT_UP;
+		
+		t_dev->delay_in_us	= TS_DELAY_IN_US;
+		t_dev->y_delay_in_us	= TS_Y_DELAY_IN_US;
+		t_dev->tnt_delay_in_us	= TNT_DELAY_IN_US;
+		
+		/* set default /etc/pointercal values */
+		t_dev->a[0] = TS_A0;
+		t_dev->a[1] = TS_A1;
+		t_dev->a[2] = TS_A2;
+		t_dev->a[3] = TS_A3;
+		t_dev->a[4] = TS_A4;
+		t_dev->a[5] = TS_A5;
+		t_dev->a[6] = TS_A6;
+		
+		t_dev->pressure_curve[0] = 468;
+		t_dev->pressure_curve[1] = 471;
+		t_dev->pressure_curve[2] = 487;
+		t_dev->pressure_curve[3] = 495;
+		t_dev->pressure_curve[4] = 509;
+		t_dev->pressure_curve[5] = 524;
+		t_dev->pressure_curve[6] = 553;
+		t_dev->pressure_curve[7] = 575;
+		t_dev->pressure_curve[8] = 612;
+		
+		t_dev->adc_max_delta_tnt = MAX_DELTA_TNT;
+	}
+
 	/* set GPIOs to max output current */
 	for (i = 0; i < NUM_TS_GPIOS; ++i) {
 		printk(KERN_INFO "set current %d: '%d' gpio_request(%s)\n", i,
