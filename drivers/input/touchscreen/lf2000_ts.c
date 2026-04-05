@@ -116,6 +116,15 @@ static int lf2k_adc_GetReading(int channel)
 #define TNT_DELAY_IN_US  1
 #endif
 
+#define MAX_TNT_DOWN_VALENCIA    19      // Down if all tnt are <= this
+#define MIN_TNT_UP_VALENCIA      520     // UP if any tnt is > this
+
+#define MAX_DELTA_TNT_VALENCIA   5		// 
+
+#define MAX_TNT_DOWN_LUCY	28
+#define MIN_TNT_UP_LUCY	500
+
+#define MAX_DELTA_TNT_LUCY   5		// 
 
 #if 1	// 11sep11	Initial guess at values for e2k#7
 #if 1	// values for 60 usec delays
@@ -133,11 +142,33 @@ static int lf2k_adc_GetReading(int channel)
 #define MAX_DELTA_TNT   5		// 
 #endif
 
+#define TS_DELAY_IN_US_VALENCIA	 1
+#define TS_Y_DELAY_IN_US_VALENCIA 1
+#define TNT_DELAY_IN_US_VALENCIA  1
+
+#define TS_DELAY_IN_US_LUCY	 10
+#define TS_Y_DELAY_IN_US_LUCY 10
+#define TNT_DELAY_IN_US_LUCY  18
 
 #define	N_PCURVE_PTS	9   // With nine control points, we get 10 bins
 
 // Default rotation, translation, and shear values.  System should set these
 // at startup.  Note order in /etc/pointercal is A1 A2 A0 A4 A5 A3 A6
+#define TS_A0_VALENCIA   -12097127
+#define TS_A1_VALENCIA	   52942
+#define TS_A2_VALENCIA	     149
+#define TS_A3_VALENCIA   -12950733
+#define TS_A4_VALENCIA	      78
+#define TS_A5_VALENCIA	   42024
+#define TS_A6_VALENCIA	   65536
+
+#define TS_A0_LUCY    25786444
+#define TS_A1_LUCY	   -29676
+#define TS_A2_LUCY	     -170
+#define TS_A3_LUCY    21441222
+#define TS_A4_LUCY	     -632
+#define TS_A5_LUCY	   -26927
+#define TS_A6_LUCY	    65536
 
 /* This default set of coefficients was obtained from a calibration of e2k#7 */
 #define TS_A0	27893492
