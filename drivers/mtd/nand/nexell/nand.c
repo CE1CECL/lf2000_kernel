@@ -1474,7 +1474,7 @@ static DEVICE_ATTR(ticks, S_IRUSR|S_IRGRP|S_IROTH, show_ticks, NULL);
  *	mtd/chips/cfi_cmdset_0002.c and 
  *	mtd/devices/m25p80.c
  */
-u32 nor_write_addr_threshold = 0x7fffffff;
+u32 nor_write_addr_threshold = 0;
 
 static ssize_t show_nor_write_addr_threshold(struct device *dev, 
 					     struct device_attribute *attr, 
