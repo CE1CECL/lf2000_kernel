@@ -75,7 +75,7 @@ static void __init cpu_fixup(
 	 */
     mi->nr_banks     	= 1;
 	mi->bank[0].start 	= CFG_MEM_PHY_SYSTEM_BASE;
-  if ((system_rev >= 0x0320) && (system_rev <= 0x032d)) {
+  if (get_leapfrog_platform() == RIO) {
     mi->bank[0].size	= 0xfe00000;
   } else {
     mi->bank[0].size	= 0x7e00000;
